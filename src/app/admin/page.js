@@ -124,10 +124,14 @@ function AdminContent() {
             onClick={handleToggleStatus}
             className={`
               px-6 py-2 rounded-full font-bold shadow-sm transition-all border text-sm md:text-base whitespace-nowrap
-              ${storeData.isOpen 
-                ? "bg-blue-100 text-blue-700 border-blue-500 hover:bg-blue-200" 
-                : "bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200"}
+              ${!storeData.isOpen 
+                ? "bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200" 
+                : "hover:opacity-90 border-transparent"}
             `}
+            style={storeData.isOpen ? {
+              backgroundColor: theme.headerBg,
+              color: theme.headerText,
+            } : {}}
           >
             {storeData.isOpen ? "営業中" : "閉店中"}
           </button>
@@ -147,7 +151,13 @@ function AdminContent() {
             
             <div className="flex items-center justify-between gap-4">
               {/* 減らすボタン */}
-              <button onClick={() => updateCount(false)} disabled={storeData.waitCount <= 0} className="w-20 h-20 rounded-full bg-red-100 text-red-600 text-4xl font-bold flex items-center justify-center shadow hover:bg-red-200 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">－</button>
+              <button 
+                onClick={() => updateCount(false)} 
+                disabled={storeData.waitCount <= 0} 
+                className="w-20 h-20 rounded-full bg-white border-2 border-gray-300 text-gray-600 text-4xl font-bold flex items-center justify-center shadow-md hover:bg-gray-50 hover:text-gray-800 hover:border-gray-400 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                －
+              </button>
               
               <div className="flex-1">
                 <span 
@@ -160,7 +170,12 @@ function AdminContent() {
               </div>
               
               {/* 増やすボタン */}
-              <button onClick={() => updateCount(true)} className="w-20 h-20 rounded-full bg-blue-100 text-blue-600 text-4xl font-bold flex items-center justify-center shadow hover:bg-blue-200 active:scale-95">＋</button>
+              <button 
+                onClick={() => updateCount(true)} 
+                className="w-20 h-20 rounded-full bg-white border-2 border-gray-300 text-gray-600 text-4xl font-bold flex items-center justify-center shadow-md hover:bg-gray-50 hover:text-gray-800 hover:border-gray-400 active:scale-95 transition-all"
+              >
+                ＋
+              </button>
             </div>
             
             <p className="mt-6 text-xl font-bold text-gray-600">
