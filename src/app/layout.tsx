@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className={mPlus.className}>
+      <body className={`${mPlus.className} bg-white text-gray-900 antialiased`}>
         {children}
       </body>
     </html>
