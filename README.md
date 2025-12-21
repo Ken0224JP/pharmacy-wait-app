@@ -46,7 +46,7 @@
 
 ### **1\. Authentication (認証)**
 
-管理画面へのログインには Email/Password認証 を使用します。  
+管理画面へのログインに、内部処理としては Email/Password認証 を使用しています。  
 運用ルールとして、以下の形式でアカウントを作成してください（店舗IDとメールアドレスを紐付けるため）。
 
 * **メールアドレス**: {店舗ID}@pharmacy.local  
@@ -117,30 +117,34 @@ npm install
    * D列: resultCount  
 3. 「拡張機能」\>「Apps Script」を開き、以下のコードを Code.gs に貼り付けます。  
 ```
-   // Code.gs  
-   function doPost(e) {  
-     try {  
-       // JSONデータを受け取る  
-       const data = JSON.parse(e.postData.contents);  
-       const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  // Code.gs
+  function doPost(e) {
+    try {
+      // JSONデータを受け取る
+      const data = JSON.parse(e.postData.contents);
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
-       // 行を追加: 日時, 店舗ID, 操作, 結果人数  
-       sheet.appendRow([  
-         new Date(),   
-         data.storeId,   
-         data.action,   
-         data.resultCount  
-       ]);
+      // 現在時刻を「yyyy/MM/dd HH:mm:ss」形式（秒まで含む）に変換
+      const now = new Date();
+      const formattedDate = Utilities.formatDate(now, "Asia/Tokyo", "yyyy/MM/dd HH:mm:ss");
 
-       // 成功レスポンス (CORS対応)  
-       return ContentService.createTextOutput(JSON.stringify({ status: "success" }))  
-         .setMimeType(ContentService.MimeType.JSON);
+      // 行を追加: 日時(秒付き), 店舗ID, 操作, 結果人数
+      sheet.appendRow([
+        formattedDate, 
+        data.storeId, 
+        data.action, 
+        data.resultCount
+      ]);
 
-     } catch (error) {  
-       return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))  
-         .setMimeType(ContentService.MimeType.JSON);  
-     }  
-   }
+      // 成功レスポンス (CORS対応)
+      return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+        .setMimeType(ContentService.MimeType.JSON);
+
+    } catch (error) {
+      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
 ```
 
 4. 「デプロイ」\>「新しいデプロイ」を選択します。  
