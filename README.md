@@ -1,4 +1,4 @@
-# **Pharmacy Wait App (薬局待ち時間表示アプリ)**
+# **薬局待ち時間表示アプリ**
 
 近隣薬局の混雑状況や待ち時間をリアルタイムで可視化・管理するためのWebアプリケーションです。  
 患者様（ユーザー）はスマホ等から各薬局の待ち状況を確認でき、薬局側（管理者）はタブレット等で簡単に状況を更新できます。  
@@ -50,7 +50,7 @@
 運用ルールとして、以下の形式でアカウントを作成してください（店舗IDとメールアドレスを紐付けるため）。
 
 * **メールアドレス**: {店舗ID}@pharmacy.local  
-  * 例: 店舗IDが store\_kyoto の場合 → store\_kyoto@pharmacy.local  
+  * 例: 店舗IDが store\_xxx の場合 → store\_xxx@pharmacy.local  
 * **パスワード**: 任意のセキュアなパスワード
 
 ### **2\. Firestore Data Model**
@@ -58,7 +58,7 @@
 Firestoreのデータベース構造は以下の通りです。
 
 * **Collection**: stores  
-  * **Document ID**: {storeId} (例: store\_kyoto, komada)
+  * **Document ID**: {storeId} (例: store\_xxx)
 
 | Field Name | Type | Description |
 | :---- | :---- | :---- |
@@ -73,20 +73,20 @@ Firestoreのデータベース構造は以下の通りです。
 「ログイン中のメールアドレスの@前の部分」 と 「書き込もうとしているドキュメントID」 が一致する場合のみ書き込みを許可する設定になっています。  
 
 ```
-rules\_version \= '2';  
-service cloud.firestore {  
-  match /databases/{database}/documents {  
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    match /stores/{storeId} {
+      // 読み取りは誰でもOK
+      allow read: if true;
       
-    match /stores/{storeId} {  
-      // 読み取りは誰でもOK  
-      allow read: if true;  
-        
-      // 書き込みは、「ログインしている」 かつ  
-      // 「ログインユーザーのメアドが、店舗ID \+ @pharmacy.local と一致する場合」のみ許可  
-      allow write: if request.auth \!= null  
-                   && request.auth.token.email \== storeId \+ "@pharmacy.local";  
-    }  
-  }  
+      // 書き込みは、「ログインしている」 かつ
+      // 「ログインユーザーのメアドが、店舗ID + @pharmacy.local と一致する場合」のみ許可
+      allow write: if request.auth != null
+                   && request.auth.token.email == storeId + "@pharmacy.local";
+    }
+  }
 }
 ```
 
@@ -95,7 +95,7 @@ service cloud.firestore {
 ### **1\. リポジトリのクローン**
 
 ```bash
-git clone \<repository-url\>  
+git clone <repository-url>  
 cd pharmacy-wait-app
 ```
 
@@ -121,16 +121,16 @@ npm install
    function doPost(e) {  
      try {  
        // JSONデータを受け取る  
-       const data \= JSON.parse(e.postData.contents);  
-       const sheet \= SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+       const data = JSON.parse(e.postData.contents);  
+       const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
        // 行を追加: 日時, 店舗ID, 操作, 結果人数  
-       sheet.appendRow(\[  
+       sheet.appendRow([  
          new Date(),   
          data.storeId,   
          data.action,   
          data.resultCount  
-       \]);
+       ]);
 
        // 成功レスポンス (CORS対応)  
        return ContentService.createTextOutput(JSON.stringify({ status: "success" }))  
@@ -156,16 +156,16 @@ npm install
 NEXT\_PUBLIC\_GAS\_API\_URL には、上記で発行したURLを貼り付けます。  
 
 ```
-\# Firebase Configuration  
-NEXT\_PUBLIC\_FIREBASE\_API\_KEY=your\_api\_key  
-NEXT\_PUBLIC\_FIREBASE\_AUTH\_DOMAIN=your\_project\_id.firebaseapp.com  
-NEXT\_PUBLIC\_FIREBASE\_PROJECT\_ID=your\_project\_id  
-NEXT\_PUBLIC\_FIREBASE\_STORAGE\_BUCKET=your\_project\_id.appspot.com  
-NEXT\_PUBLIC\_FIREBASE\_MESSAGING\_SENDER\_ID=your\_messaging\_sender\_id  
-NEXT\_PUBLIC\_FIREBASE\_APP\_ID=your\_app\_id
+# Firebase Configuration  
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key  
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com  
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id  
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com  
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id  
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
-\# Logging API (Google Apps Script Web App URL)  
-NEXT\_PUBLIC\_GAS\_API\_URL=\[https://script.google.com/macros/s/xxxxxxxxxxxxxxxx/exec\](https://script.google.com/macros/s/xxxxxxxxxxxxxxxx/exec)
+# Logging API (Google Apps Script Web App URL)  
+NEXT_PUBLIC_GAS_API_URL=https://script.google.com/macros/s/xxxx/exec\
 ```
 
 ### **5\. 開発サーバーの起動**
