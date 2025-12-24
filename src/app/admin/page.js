@@ -4,7 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
 import { usePharmacyStore } from "@/hooks/usePharmacyStore";
-import { COLOR_CONFIG } from "@/lib/constants";
+// ★変更: COLOR_CONFIG のインポートを削除し、共通ユーティリティをインポート
+import { getStoreTheme, calculateWaitTime } from "@/lib/utils";
 // アイコンのインポート
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCog } from "@fortawesome/free-solid-svg-icons";
@@ -27,7 +28,7 @@ function AdminContent() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [inputAvgTime, setInputAvgTime] = useState(5);
 
-  // ★ 追加: Wake Lock(画面常時点灯)用のステート
+  // Wake Lock(画面常時点灯)用のステート
   const [wakeLockSentinel, setWakeLockSentinel] = useState(null);
 
   useEffect(() => {
@@ -51,7 +52,7 @@ function AdminContent() {
     }
   }, [storeData, isSettingsOpen]);
 
-  // ★ 追加: 画面ロック操作用の関数
+  // 画面ロック操作用の関数
   const requestWakeLock = async () => {
     // ブラウザがAPIに対応しているか確認
     if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
@@ -77,7 +78,7 @@ function AdminContent() {
     }
   };
 
-  // ★ 追加: タブ切り替えなどでロックが外れた場合、営業中なら再取得を試みる
+  // タブ切り替えなどでロックが外れた場合、営業中なら再取得を試みる
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible' && storeData?.isOpen) {
@@ -111,7 +112,7 @@ function AdminContent() {
       if (!isConfirmed) return;
     }
 
-    // ★ 追加: ボタン操作に合わせてWake Lockを切り替え
+    // ボタン操作に合わせてWake Lockを切り替え
     // これから「開店」する場合 -> ロック取得
     // これから「閉店」する場合 -> ロック解除
     if (!storeData.isOpen) {
@@ -133,13 +134,7 @@ function AdminContent() {
     }
   };
 
-  const getTheme = () => {
-    if (!storeData) return COLOR_CONFIG.closed;
-    if (!storeData.isOpen) return COLOR_CONFIG.closed;
-    if (storeData.waitCount <= 2) return COLOR_CONFIG.low;
-    if (storeData.waitCount <= 5) return COLOR_CONFIG.medium;
-    return COLOR_CONFIG.high;
-  };
+  // ★削除: 重複していた getTheme 関数を削除
 
   // --- 表示ロジック ---
 
@@ -186,8 +181,11 @@ function AdminContent() {
   if (dataLoading) return <div className="p-10 text-center">店舗データ読み込み中...</div>;
   if (!storeData) return <div className="p-10 text-center">店舗データが見つかりません (ID: {targetStoreId})</div>;
 
-  const theme = getTheme();
-  const currentAvgTime = storeData.avgTime || 5;
+  // ★変更: 共通関数を使用してテーマを取得
+  const theme = getStoreTheme(storeData.isOpen, storeData.waitCount);
+  
+  // ★追加: 共通関数を使用して待ち時間を計算
+  const waitTime = calculateWaitTime(storeData.waitCount, storeData.avgTime);
 
   return (
     <div className="min-h-screen bg-gray-200 relative">
@@ -257,7 +255,8 @@ function AdminContent() {
             {/* 目安時間表示と歯車アイコン */}
             <div className="mt-6 flex items-center justify-center gap-2">
               <p className="text-xl font-bold text-gray-600">
-                目安待ち時間: <span>{storeData.waitCount * currentAvgTime}</span> 分
+                {/* ★変更: 計算済みの waitTime を使用 */}
+                目安待ち時間: <span>{waitTime}</span> 分
               </p>
               <button 
                 onClick={() => setIsSettingsOpen(true)}

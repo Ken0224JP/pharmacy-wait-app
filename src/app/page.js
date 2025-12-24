@@ -4,23 +4,10 @@ import Link from "next/link";
 import { useAllStores } from "@/hooks/useAllStores";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouseMedical } from "@fortawesome/free-solid-svg-icons";
-import { COLOR_CONFIG } from "@/lib/constants";
+import { formatTime, getStoreTheme, calculateWaitTime } from "@/lib/utils";
 
 export default function Home() {
   const { stores, loading } = useAllStores();
-
-  const formatTime = (timestamp) => {
-    if (!timestamp) return "";
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
-  };
-
-  const getTheme = (store) => {
-    if (!store.isOpen) return COLOR_CONFIG.closed;
-    if (store.waitCount <= 2) return COLOR_CONFIG.low;
-    if (store.waitCount <= 5) return COLOR_CONFIG.medium;
-    return COLOR_CONFIG.high;
-  };
 
   if (loading) return <div className="p-10 text-center">読み込み中...</div>;
 
@@ -38,9 +25,9 @@ export default function Home() {
         ) : (
           <div className="flex flex-wrap justify-center gap-6">
             {stores.map((store) => {
-              const theme = getTheme(store);
-              const avgTime = store.avgTime || 5;
-              const waitTime = store.waitCount * avgTime
+              // 共通ユーティリティを使用してテーマと待ち時間を取得
+              const theme = getStoreTheme(store.isOpen, store.waitCount);
+              const waitTime = calculateWaitTime(store.waitCount, store.avgTime);
 
               return (
                 <Link 

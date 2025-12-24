@@ -6,7 +6,8 @@ import { Suspense } from "react";
 import { usePharmacyStore } from "@/hooks/usePharmacyStore";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouseMedical } from "@fortawesome/free-solid-svg-icons";
-import { COLOR_CONFIG } from "@/lib/constants";
+// ★変更: COLOR_CONFIG のインポートを削除し、共通ユーティリティをインポート
+import { formatTime, getStoreTheme, calculateWaitTime } from "@/lib/utils";
 
 function StoreViewContent() {
   const searchParams = useSearchParams();
@@ -18,27 +19,14 @@ function StoreViewContent() {
   if (!storeData) return <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4"><p className="text-xl text-red-500">店舗データが見つかりませんでした。</p><Link href="/" className="text-blue-500 underline">店舗一覧に戻る</Link></div>;
 
   const { name, isOpen, waitCount, updatedAt } = storeData;
-  const avgTime = storeData.avgTime || 5;
-  const waitTime = waitCount * avgTime;
+  
+  // ★変更: 共通関数を使用して待ち時間を計算
+  const waitTime = calculateWaitTime(waitCount, storeData.avgTime);
 
-  const formatTime = (timestamp) => {
-    if (!timestamp) return "";
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  };
+  // ★削除: 重複していた formatTime, getTheme 関数定義を削除
 
-  // 状況に応じたカラー設定を取得する関数
-  const getTheme = () => {
-    if (!isOpen) return COLOR_CONFIG.closed;
-    if (waitCount <= 2) return COLOR_CONFIG.low;
-    if (waitCount <= 5) return COLOR_CONFIG.medium;
-    return COLOR_CONFIG.high;
-  };
-
-  const theme = getTheme();
+  // ★変更: 共通関数を使用してテーマを取得
+  const theme = getStoreTheme(isOpen, waitCount);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-200 transition-colors duration-500">
@@ -81,6 +69,7 @@ function StoreViewContent() {
                   className="text-4xl md:text-6xl font-bold transition-colors duration-300"
                   style={{ color: theme.accentColor }}
                 >
+                  {/* ★変更: 計算済みの waitTime を使用 */}
                   {waitCount === 0 ? "なし" : `約 ${waitTime} 分`}
                 </p>
               </div>
@@ -106,6 +95,7 @@ function StoreViewContent() {
           {updatedAt && (
             <div className="mt-6 pt-4 border-t border-gray-50">
               <p className="text-xs text-gray-400 font-mono">
+                {/* ★変更: formatTime を使用 */}
                 最終更新: {formatTime(updatedAt)}
               </p>
             </div>
