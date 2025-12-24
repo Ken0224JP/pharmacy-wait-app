@@ -18,7 +18,8 @@ function StoreViewContent() {
   if (!storeData) return <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4"><p className="text-xl text-red-500">店舗データが見つかりませんでした。</p><Link href="/" className="text-blue-500 underline">店舗一覧に戻る</Link></div>;
 
   const { name, isOpen, waitCount, updatedAt } = storeData;
-  const waitTime = waitCount * 5;
+  const avgTime = storeData.avgTime || 5;
+  const waitTime = waitCount * avgTime;
 
   const formatTime = (timestamp) => {
     if (!timestamp) return "";

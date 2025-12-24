@@ -5,6 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
 import { usePharmacyStore } from "@/hooks/usePharmacyStore";
 import { COLOR_CONFIG } from "@/lib/constants";
+// アイコンのインポート
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCog } from "@fortawesome/free-solid-svg-icons";
 
 function AdminContent() {
   const searchParams = useSearchParams();
@@ -18,7 +21,14 @@ function AdminContent() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const { storeData, loading: dataLoading, toggleOpen, updateCount } = usePharmacyStore(targetStoreId);
+  const { storeData, loading: dataLoading, toggleOpen, updateCount, updateAvgTime } = usePharmacyStore(targetStoreId);
+
+  // 設定モーダル用ステート
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [inputAvgTime, setInputAvgTime] = useState(5);
+
+  // ★ 追加: Wake Lock(画面常時点灯)用のステート
+  const [wakeLockSentinel, setWakeLockSentinel] = useState(null);
 
   useEffect(() => {
     if (targetStoreId) {
@@ -33,6 +43,52 @@ function AdminContent() {
     });
     return () => unsubscribe();
   }, [auth]);
+
+  // モーダル初期値設定
+  useEffect(() => {
+    if (storeData) {
+      setInputAvgTime(storeData.avgTime || 5);
+    }
+  }, [storeData, isSettingsOpen]);
+
+  // ★ 追加: 画面ロック操作用の関数
+  const requestWakeLock = async () => {
+    // ブラウザがAPIに対応しているか確認
+    if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+      try {
+        const sentinel = await navigator.wakeLock.request('screen');
+        setWakeLockSentinel(sentinel);
+        console.log("Screen Wake Lock active: 画面の常時点灯を有効にしました");
+      } catch (err) {
+        console.error("Wake Lock request failed:", err);
+      }
+    }
+  };
+
+  const releaseWakeLock = async () => {
+    if (wakeLockSentinel) {
+      try {
+        await wakeLockSentinel.release();
+        setWakeLockSentinel(null);
+        console.log("Screen Wake Lock released: 画面の常時点灯を解除しました");
+      } catch (err) {
+        console.error("Wake Lock release failed:", err);
+      }
+    }
+  };
+
+  // ★ 追加: タブ切り替えなどでロックが外れた場合、営業中なら再取得を試みる
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && storeData?.isOpen) {
+        await requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [storeData?.isOpen]);
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -49,15 +105,34 @@ function AdminContent() {
 
   const handleLogout = () => signOut(auth);
 
-  const handleToggleStatus = () => {
+  const handleToggleStatus = async () => {
     if (storeData.isOpen && storeData.waitCount > 0) {
       const isConfirmed = window.confirm("閉店（受付終了）に切り替えますか？\n\n※まだ待ち人数が残っていますが、自動的に「0人」にリセットされます。");
       if (!isConfirmed) return;
     }
+
+    // ★ 追加: ボタン操作に合わせてWake Lockを切り替え
+    // これから「開店」する場合 -> ロック取得
+    // これから「閉店」する場合 -> ロック解除
+    if (!storeData.isOpen) {
+      await requestWakeLock();
+    } else {
+      await releaseWakeLock();
+    }
+
     toggleOpen();
   };
 
-  // 状況に応じたカラー設定を取得する関数（Viewと同じロジック）
+  const handleSaveSettings = () => {
+    const val = parseInt(inputAvgTime, 10);
+    if (!isNaN(val) && val > 0) {
+        updateAvgTime(val);
+        setIsSettingsOpen(false);
+    } else {
+        alert("有効な数値を入力してください");
+    }
+  };
+
   const getTheme = () => {
     if (!storeData) return COLOR_CONFIG.closed;
     if (!storeData.isOpen) return COLOR_CONFIG.closed;
@@ -112,10 +187,11 @@ function AdminContent() {
   if (!storeData) return <div className="p-10 text-center">店舗データが見つかりません (ID: {targetStoreId})</div>;
 
   const theme = getTheme();
+  const currentAvgTime = storeData.avgTime || 5;
 
   return (
-    <div className="min-h-screen bg-gray-200">
-      <header className="bg-white shadow px-4 py-3 flex justify-between items-center sticky top-0 z-50">
+    <div className="min-h-screen bg-gray-200 relative">
+      <header className="bg-white shadow px-4 py-3 flex justify-between items-center sticky top-0 z-40">
         <div className="font-bold text-gray-800 text-sm md:text-base w-1/3 truncate">
           {storeData.name}
         </div>
@@ -178,12 +254,68 @@ function AdminContent() {
               </button>
             </div>
             
-            <p className="mt-6 text-xl font-bold text-gray-600">
-              目安待ち時間: <span>{storeData.waitCount * 5}</span> 分
-            </p>
+            {/* 目安時間表示と歯車アイコン */}
+            <div className="mt-6 flex items-center justify-center gap-2">
+              <p className="text-xl font-bold text-gray-600">
+                目安待ち時間: <span>{storeData.waitCount * currentAvgTime}</span> 分
+              </p>
+              <button 
+                onClick={() => setIsSettingsOpen(true)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2"
+                title="計算設定を変更"
+              >
+                <FontAwesomeIcon icon={faCog} />
+              </button>
+            </div>
           </div>
         </section>
       </main>
+
+      {/* 設定用モーダル */}
+      {isSettingsOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-xs animate-[fadeIn_0.2s_ease-out]">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">
+              設定
+            </h3>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-gray-600 mb-2">
+                一人あたりの目安時間
+              </label>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="number" 
+                  min="1"
+                  value={inputAvgTime}
+                  onChange={(e) => setInputAvgTime(e.target.value)}
+                  className="border-2 border-gray-200 rounded-lg px-3 py-2 w-full text-xl font-bold text-gray-700 focus:border-blue-500 focus:outline-none text-right"
+                />
+                <span className="text-gray-500 font-bold">分</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                ※ この時間 × 待ち人数 で全体の待ち時間を計算します。
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setIsSettingsOpen(false)}
+                className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-lg transition-colors text-sm"
+              >
+                キャンセル
+              </button>
+              <button 
+                onClick={handleSaveSettings}
+                className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors text-sm shadow-md"
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -39,13 +39,11 @@ export const usePharmacyStore = (storeId) => {
     if (!storeData) return;
     const nextIsOpen = !storeData.isOpen;
     
-    // 更新内容オブジェクト
     const updates = {
       isOpen: nextIsOpen,
       updatedAt: serverTimestamp()
     };
 
-    // 閉店時は人数リセット
     if (!nextIsOpen && storeData.waitCount > 0) {
       updates.waitCount = 0;
     }
@@ -68,5 +66,16 @@ export const usePharmacyStore = (storeId) => {
     sendLog(isIncrement ? "INCREMENT" : "DECREMENT", nextCount);
   };
 
-  return { storeData, loading, toggleOpen, updateCount };
+  const updateAvgTime = async (newTime) => {
+    if (!storeData) return;
+    const time = parseInt(newTime, 10);
+    if (isNaN(time) || time < 1) return;
+
+    await updateDoc(doc(db, "stores", storeId), {
+      avgTime: time,
+      updatedAt: serverTimestamp()
+    });
+  };
+
+  return { storeData, loading, toggleOpen, updateCount, updateAvgTime };
 };

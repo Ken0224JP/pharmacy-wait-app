@@ -39,7 +39,8 @@ export default function Home() {
           <div className="flex flex-wrap justify-center gap-6">
             {stores.map((store) => {
               const theme = getTheme(store);
-              const waitTime = store.waitCount * 5;
+              const avgTime = store.avgTime || 5;
+              const waitTime = store.waitCount * avgTime
 
               return (
                 <Link 
