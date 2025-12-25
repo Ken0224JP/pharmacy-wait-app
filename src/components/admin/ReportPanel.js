@@ -50,7 +50,7 @@ export default function ReportPanel({ storeId, settingAvgTime }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6 shadow-sm animate-fade-in min-h-[200px]">
+    <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6 shadow-sm min-h-[200px]">
       
       {/* --- ヘッダー領域 --- */}
       <div className="flex justify-between items-center pb-4 mb-4 min-h-[3rem]">
@@ -69,7 +69,7 @@ export default function ReportPanel({ storeId, settingAvgTime }) {
       {loading && (
         <div className="flex flex-col items-center justify-center py-10 space-y-3">
           <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
-          <p className="text-gray-400 text-sm">データを集計中...</p>
+          <p className="text-gray-400">データを集計中...</p>
         </div>
       )}
 
@@ -91,30 +91,27 @@ export default function ReportPanel({ storeId, settingAvgTime }) {
       {/* --- メインコンテンツ --- */}
       {!loading && !error && report && report.date && (
         <div className="animate-fade-in">
-          {/* ★修正: items-center を削除しました。
-             これにより上端が揃い、かつ仕切り線も高さに合わせてきれいに表示されます。 */}
-          <div className="flex justify-center divide-x divide-gray-200 mb-6">
-            
+          <div className="flex justify-center divide-x divide-gray-200 mb-6">            
             {/* 左: 平均待ち時間 (実測) */}
             <div className="w-1/2 text-center px-2">
-              <p className="text-xs text-gray-500 mb-1">平均待ち時間</p>
+              <p className="text-gray-500 mb-1">平均待ち時間</p>
               <p 
-                className="text-5xl font-bold transition-colors duration-300"
+                className="text-7xl font-bold transition-colors duration-300"
                 style={{ color: getWaitTimeColor(report.avgWaitTime) }}
               >
                 {report.avgWaitTime}<span className="text-sm text-gray-400 ml-1">分</span>
               </p>
               {settingAvgTime > 0 && (
-                <p className="text-[10px] text-gray-400 mt-1">
-                  (設定: {settingAvgTime}分)
+                <p className="text-xs text-gray-400 mt-1">
+                  (設定：{settingAvgTime}分)
                 </p>
               )}
             </div>
 
             {/* 右: 総受付人数 */}
             <div className="w-1/2 text-center px-2">
-              <p className="text-xs text-gray-500 mb-1">総受付人数</p>
-              <p className="text-5xl font-bold text-gray-800">
+              <p className="text-gray-500 mb-1">総受付人数</p>
+              <p className="text-7xl font-bold text-gray-800">
                 {report.totalVisitors}<span className="text-sm text-gray-400 ml-1">人</span>
               </p>
             </div>
@@ -123,7 +120,7 @@ export default function ReportPanel({ storeId, settingAvgTime }) {
           {/* 下部: 営業時間情報 */}
           <div className="text-center bg-gray-50 rounded-lg py-3 mb-2">
             <p className="text-sm font-bold text-gray-600">
-              営業: {report.duration} <span className="font-normal text-gray-500 ml-1">({report.openTime} 〜 {report.closeTime})</span>
+              営業時間：{report.duration} <span className="font-normal text-gray-500 ml-1">({report.openTime}〜{report.closeTime})</span>
             </p>
           </div>
         </div>

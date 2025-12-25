@@ -30,6 +30,7 @@
   * **待ち時間目安のカスタマイズ**: 状況に応じて一人当たり待ち時間目安を設定・変更できます。  
   * **自動ロック回避（Wake Lock）**: ブラウザが対応している場合、管理画面で店舗ステータスが「開店（Open）」の間、デバイスの自動スリープ（画面ロック）を防止します。  
 * **ログ記録**: 操作内容（OPEN, CLOSE, INCREMENT, DECREMENT）と操作後の人数をスプレッドシートに自動記録。
+* **簡易集計機能**: 閉局中は、前回営業時の平均待ち時間・総受付人数・営業時間のまとめを表示。
 
 ## **技術スタック**
 
@@ -110,7 +111,7 @@ npm install
 
 ### **3\. Google Apps Script (GAS) の準備**
 
-ログ収集用のAPIを作成します。
+ログ収集および集計用のAPIを作成します。
 
 1. Googleスプレッドシートを新規作成します。  
 2. 1行目に以下のヘッダーを設定します。  
@@ -119,35 +120,174 @@ npm install
    * C列: action  
    * D列: resultCount  
 3. 「拡張機能」\>「Apps Script」を開き、以下のコードを Code.gs に貼り付けます。  
-```
-  // Code.gs
-  function doPost(e) {
-    try {
-      // JSONデータを受け取る
-      const data = JSON.parse(e.postData.contents);
-      const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+```GAS
+// Code.gs
+function doPost(e) {
+  try {
+    // JSONデータを受け取る
+    const data = JSON.parse(e.postData.contents);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
-      // 現在時刻を「yyyy/MM/dd HH:mm:ss」形式（秒まで含む）に変換
-      const now = new Date();
-      const formattedDate = Utilities.formatDate(now, "Asia/Tokyo", "yyyy/MM/dd HH:mm:ss");
+    // 現在時刻を「yyyy/MM/dd HH:mm:ss」形式（秒まで含む）に変換
+    const now = new Date();
+    const formattedDate = Utilities.formatDate(now, "Asia/Tokyo", "yyyy/MM/dd HH:mm:ss");
 
-      // 行を追加: 日時(秒付き), 店舗ID, 操作, 結果人数
-      sheet.appendRow([
-        formattedDate, 
-        data.storeId, 
-        data.action, 
-        data.resultCount
-      ]);
+    // 行を追加: 日時(秒付き), 店舗ID, 操作, 結果人数
+    sheet.appendRow([
+      formattedDate, 
+      data.storeId, 
+      data.action, 
+      data.resultCount
+    ]);
 
-      // 成功レスポンス (CORS対応)
-      return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
-        .setMimeType(ContentService.MimeType.JSON);
+    // 成功レスポンス (CORS対応)
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
 
-    } catch (error) {
-      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function doGet(e) {
+  var targetStoreId = e.parameter.storeId;
+  
+  if (!targetStoreId) {
+    return createJSONOutput({ error: "Store ID is required" });
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheets()[0];
+  // 直近3000行を取得（高速化）
+  var lastRow = sheet.getLastRow();
+  var startRow = Math.max(1, lastRow - 3000); 
+  var numRows = lastRow - startRow + 1;
+  
+  if (numRows < 1) {
+    return createJSONOutput({});
+  }
+
+  var data = sheet.getRange(startRow, 1, numRows, 4).getValues();
+  
+  // 集計用変数
+  var arrivalQueue = []; 
+  var totalWaitTimeMinutes = 0; 
+  var resolvedPatients = 0; 
+  var totalVisitors = 0; 
+  var prevCount = 0; 
+  
+  // ★追加: 営業時間管理用
+  var lastOpenTime = null; // Dateオブジェクト
+  var lastCloseTime = null; // Dateオブジェクト
+
+  // ループ処理
+  for (var i = 0; i < data.length; i++) {
+    var row = data[i];
+    if (row[0] === "timestamp" || row[0] === "日時") continue;
+
+    var storeId = row[1];
+    if (String(storeId) !== String(targetStoreId)) continue;
+
+    var timestamp = new Date(row[0]);
+    var action = row[2];
+    var currentCount = Number(row[3]);
+
+    // OPEN検知: リセット処理
+    if (action === "OPEN") {
+      arrivalQueue = [];
+      totalWaitTimeMinutes = 0;
+      resolvedPatients = 0;
+      totalVisitors = 0;
+      prevCount = 0;
+      
+      // ★追加: 開店時刻を記録、閉店時刻はリセット
+      lastOpenTime = timestamp;
+      lastCloseTime = null; 
+      
+      continue; 
+    }
+    
+    // CLOSE検知: 閉店時刻を記録
+    if (action === "CLOSE") {
+      lastCloseTime = timestamp;
+      // CLOSEでも人数精算ロジックは通すため continue はしない
+    }
+
+    // --- 人数増減ロジック (前回と同じ) ---
+    var diff = currentCount - prevCount;
+    if (diff > 0) {
+      for (var k = 0; k < diff; k++) {
+        arrivalQueue.push(timestamp.getTime());
+        totalVisitors++;
+      }
+    } else if (diff < 0) {
+      var decreaseCount = Math.abs(diff);
+      for (var k = 0; k < decreaseCount; k++) {
+        if (arrivalQueue.length > 0) {
+          var arrivedAt = arrivalQueue.shift();
+          var leftAt = timestamp.getTime();
+          var waitMinutes = (leftAt - arrivedAt) / (1000 * 60);
+          if (waitMinutes > 0 && waitMinutes < 300) { 
+            totalWaitTimeMinutes += waitMinutes;
+            resolvedPatients++;
+          }
+        }
+      }
+    }
+    prevCount = currentCount;
+  }
+
+  // --- 結果の整形 ---
+  var avgTime = resolvedPatients > 0 ? Math.round(totalWaitTimeMinutes / resolvedPatients) : 0;
+  
+  // 営業日・時間の計算
+  var dateStr = "";
+  var openTimeStr = "";
+  var closeTimeStr = "";
+  var durationStr = "";
+
+  if (lastOpenTime) {
+    // 日付 (YYYY-MM-DD)
+    dateStr = Utilities.formatDate(lastOpenTime, "JST", "yyyy/MM/dd");
+    // 開店時刻 (HH:mm)
+    openTimeStr = Utilities.formatDate(lastOpenTime, "JST", "HH:mm");
+    
+    // 閉店時刻と期間
+    // もしCLOSEログがない（営業中）場合は、最後のログ時刻または現在時刻を仮終了とする
+    var endTime = lastCloseTime ? lastCloseTime : new Date(); 
+    
+    if (lastCloseTime) {
+       closeTimeStr = Utilities.formatDate(lastCloseTime, "JST", "HH:mm");
+    } else {
+       closeTimeStr = "営業中";
+    }
+
+    // 期間（分）の計算
+    var durationMillis = endTime.getTime() - lastOpenTime.getTime();
+    var durationMinutes = Math.floor(durationMillis / (1000 * 60));
+    var hours = Math.floor(durationMinutes / 60);
+    var mins = durationMinutes % 60;
+    durationStr = hours + "時間" + mins + "分";
+  }
+
+  var result = {
+    date: dateStr,           // "2023/12/25"
+    openTime: openTimeStr,   // "09:00"
+    closeTime: closeTimeStr, // "18:00" または "営業中"
+    duration: durationStr,   // "9時間0分"
+    totalVisitors: totalVisitors,
+    avgWaitTime: avgTime,
+    resolvedCount: resolvedPatients
+  };
+  
+  return createJSONOutput(result);
+}
+
+function createJSONOutput(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 ```
 
 4. 「デプロイ」\>「新しいデプロイ」を選択します。  
@@ -199,7 +339,8 @@ src/
 │   └── admin/
 │       ├── LoginForm.js     # 管理画面：ログインフォーム
 │       ├── SettingsModal.js # 管理画面：待ち時間設定モーダル
-│       └── StatusPanel.js   # 管理画面：待ち人数操作・表示パネル
+│       ├── StatusPanel.js   # 管理画面：待ち人数操作・表示パネル
+│       └── ReportPanel.js   # 管理画面：集計結果表示パネル
 │
 ├── hooks/                   # カスタムフック (ロジックの分離)
 │   ├── useAllStores.js      # 全店舗のリアルタイムデータ取得
