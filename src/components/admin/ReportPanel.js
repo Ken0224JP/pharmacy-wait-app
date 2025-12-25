@@ -92,7 +92,7 @@ export default function ReportPanel({ storeId, settingAvgTime }) {
       {!loading && !error && report && report.date && (
         <div className="animate-fade-in">
           <div className="flex justify-center divide-x divide-gray-200 mb-6">            
-            {/* 左: 平均待ち時間 (実測) */}
+            {/* 左: 平均待ち時間 */}
             <div className="w-1/2 text-center px-2">
               <p className="text-gray-500 mb-1">平均待ち時間</p>
               <p 

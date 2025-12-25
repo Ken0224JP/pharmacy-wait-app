@@ -6,26 +6,16 @@ import { Suspense } from "react";
 import { usePharmacyStore } from "@/hooks/usePharmacyStore";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouseMedical } from "@fortawesome/free-solid-svg-icons";
-// ★変更: COLOR_CONFIG のインポートを削除し、共通ユーティリティをインポート
 import { formatTime, getStoreTheme, calculateWaitTime } from "@/lib/utils";
 
 function StoreViewContent() {
   const searchParams = useSearchParams();
   const storeId = searchParams.get("id");
-
   const { storeData, loading } = usePharmacyStore(storeId);
-
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p className="text-xl text-gray-500 animate-pulse">読み込み中...</p></div>;
   if (!storeData) return <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4"><p className="text-xl text-red-500">店舗データが見つかりませんでした。</p><Link href="/" className="text-blue-500 underline">店舗一覧に戻る</Link></div>;
-
   const { name, isOpen, waitCount, updatedAt } = storeData;
-  
-  // ★変更: 共通関数を使用して待ち時間を計算
   const waitTime = calculateWaitTime(waitCount, storeData.avgTime);
-
-  // ★削除: 重複していた formatTime, getTheme 関数定義を削除
-
-  // ★変更: 共通関数を使用してテーマを取得
   const theme = getStoreTheme(isOpen, waitCount);
 
   return (
@@ -69,7 +59,6 @@ function StoreViewContent() {
                   className="text-4xl md:text-6xl font-bold transition-colors duration-300"
                   style={{ color: theme.accentColor }}
                 >
-                  {/* ★変更: 計算済みの waitTime を使用 */}
                   {waitCount === 0 ? "なし" : `約 ${waitTime} 分`}
                 </p>
               </div>
@@ -95,7 +84,6 @@ function StoreViewContent() {
           {updatedAt && (
             <div className="mt-6 pt-4 border-t border-gray-50">
               <p className="text-xs text-gray-400 font-mono">
-                {/* ★変更: formatTime を使用 */}
                 最終更新: {formatTime(updatedAt)}
               </p>
             </div>

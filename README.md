@@ -177,7 +177,7 @@ function doGet(e) {
   var totalVisitors = 0; 
   var prevCount = 0; 
   
-  // ★追加: 営業時間管理用
+  // 営業時間管理用
   var lastOpenTime = null; // Dateオブジェクト
   var lastCloseTime = null; // Dateオブジェクト
 
@@ -201,7 +201,7 @@ function doGet(e) {
       totalVisitors = 0;
       prevCount = 0;
       
-      // ★追加: 開店時刻を記録、閉店時刻はリセット
+      // 開店時刻を記録、閉店時刻はリセット
       lastOpenTime = timestamp;
       lastCloseTime = null; 
       

@@ -105,7 +105,6 @@ function AdminContent() {
             onOpenSettings={() => setIsSettingsOpen(true)}
           />
         ) : (
-          /* ★変更: settingAvgTime を渡すように修正 */
           <ReportPanel 
             storeId={targetStoreId} 
             settingAvgTime={storeData.avgTime} 
