@@ -12,8 +12,8 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Store, StoreData } from "@/types";
+import { FIRESTORE_COLLECTION_STORES } from "@/lib/constants";
 
-const STORES_COLLECTION = "stores";
 
 // 店舗のリアルタイム監視
 export const subscribeToStore = (
@@ -21,7 +21,7 @@ export const subscribeToStore = (
   onUpdate: (data: StoreData | null) => void,
   onError?: (error: FirestoreError) => void
 ) => {
-  const storeRef = doc(db, STORES_COLLECTION, storeId);
+  const storeRef = doc(db, FIRESTORE_COLLECTION_STORES, storeId);
   // onSnapshotの返り値（unsubscribe関数）をそのまま返す
   return onSnapshot(storeRef, (docSnap) => {
     if (docSnap.exists()) {
@@ -37,7 +37,7 @@ export const subscribeToAllStores = (
   onUpdate: (stores: Store[]) => void,
   onError?: (error: FirestoreError) => void
 ) => {
-  const q = query(collection(db, STORES_COLLECTION), orderBy("name"));
+  const q = query(collection(db, FIRESTORE_COLLECTION_STORES), orderBy("name"));
   return onSnapshot(q, (snapshot) => {
     const storesData = snapshot.docs.map(doc => ({
       id: doc.id,
@@ -62,12 +62,12 @@ export const updateStoreStatus = async (
     updates.waitCount = 0;
   }
 
-  await updateDoc(doc(db, STORES_COLLECTION, storeId), updates);
+  await updateDoc(doc(db, FIRESTORE_COLLECTION_STORES, storeId), updates);
 };
 
 // 待ち人数の増減
 export const updateStoreWaitCount = async (storeId: string, isIncrement: boolean) => {
-  await updateDoc(doc(db, STORES_COLLECTION, storeId), {
+  await updateDoc(doc(db, FIRESTORE_COLLECTION_STORES, storeId), {
     waitCount: increment(isIncrement ? 1 : -1),
     updatedAt: serverTimestamp()
   });
@@ -75,7 +75,7 @@ export const updateStoreWaitCount = async (storeId: string, isIncrement: boolean
 
 // 平均待ち時間の更新
 export const updateStoreAvgTime = async (storeId: string, newTime: number) => {
-  await updateDoc(doc(db, STORES_COLLECTION, storeId), {
+  await updateDoc(doc(db, FIRESTORE_COLLECTION_STORES, storeId), {
     avgTime: newTime,
     updatedAt: serverTimestamp()
   });

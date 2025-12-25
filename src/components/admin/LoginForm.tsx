@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { AUTH_DOMAIN_SUFFIX } from "@/lib/constants";
 
 export default function LoginForm() {
   const [loginId, setLoginId] = useState("");
@@ -14,7 +15,7 @@ export default function LoginForm() {
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    const email = `${loginId}@pharmacy.local`;
+    const email = `${loginId}${AUTH_DOMAIN_SUFFIX}`;
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push(`/admin?id=${loginId}`);

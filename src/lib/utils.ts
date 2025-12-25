@@ -1,6 +1,5 @@
 import { Timestamp } from "firebase/firestore";
-import { COLOR_CONFIG, ThemeColor } from "@/lib/constants";
-
+import { COLOR_CONFIG, ThemeColor, DEFAULT_AVG_WAIT_MINUTES, THRESHOLD_LOW, THRESHOLD_MEDIUM } from "@/lib/constants";
 /**
  * タイムスタンプを "HH:MM" 形式の文字列に変換
  */
@@ -31,8 +30,8 @@ export const formatDateTime = (timestamp: Timestamp | null) => {
  */
 export const getStoreTheme = (isOpen: boolean, waitCount: number): ThemeColor => {
   if (!isOpen) return COLOR_CONFIG.closed;
-  if (waitCount <= 2) return COLOR_CONFIG.low;
-  if (waitCount <= 5) return COLOR_CONFIG.medium;
+  if (waitCount <= THRESHOLD_LOW) return COLOR_CONFIG.low;
+  if (waitCount <= THRESHOLD_MEDIUM) return COLOR_CONFIG.medium;
   return COLOR_CONFIG.high;
 };
 
@@ -40,7 +39,7 @@ export const getStoreTheme = (isOpen: boolean, waitCount: number): ThemeColor =>
  * 待ち時間の目安を計算
  */
 export const calculateWaitTime = (waitCount: number, avgTime: number | null | undefined): number => {
-  // avgTimeが未設定の場合はデフォルト値 5 を使用
-  const timePerPerson = avgTime || 5;
+  // avgTimeが未設定の場合はデフォルト値を使用
+  const timePerPerson = avgTime || DEFAULT_AVG_WAIT_MINUTES;
   return waitCount * timePerPerson;
 };

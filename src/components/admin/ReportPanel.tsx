@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { COLOR_CONFIG } from "@/lib/constants";
+import { COLOR_CONFIG, RATIO_THRESHOLD_LOW, RATIO_THRESHOLD_MEDIUM } from "@/lib/constants";
 
 const GAS_API_URL = process.env.NEXT_PUBLIC_GAS_API_URL;
 
@@ -54,9 +54,9 @@ export default function ReportPanel({ storeId, settingAvgTime }: ReportPanelProp
 
     const ratio = actualTime / settingAvgTime;
 
-    if (ratio <= 1.5) {
+    if (ratio <= RATIO_THRESHOLD_LOW) {
       return COLOR_CONFIG.low.accentColor;
-    } else if (ratio <= 2.0) {
+    } else if (ratio <= RATIO_THRESHOLD_MEDIUM) {
       return COLOR_CONFIG.medium.accentColor;
     } else {
       return COLOR_CONFIG.high.accentColor;
