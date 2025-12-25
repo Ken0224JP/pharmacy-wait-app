@@ -286,7 +286,8 @@ function doGet(e) {
 function createJSONOutput(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
-}```
+}
+```
 
 4. 「デプロイ」\>「新しいデプロイ」を選択します。  
    * **種類の選択**: ウェブアプリ  
