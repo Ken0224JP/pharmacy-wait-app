@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { usePharmacyStore } from "@/hooks/usePharmacyStore";
 import { getStoreTheme } from "@/lib/utils";
 import { useWakeLock } from "@/hooks/useWakeLock";
@@ -18,7 +18,7 @@ function AdminContent() {
   const targetStoreId = searchParams.get("id");
   const auth = getAuth();
 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -37,6 +37,8 @@ function AdminContent() {
   const handleLogout = () => signOut(auth);
 
   const handleToggleStatus = async () => {
+    if (!storeData) return;
+    
     if (storeData.isOpen && storeData.waitCount > 0) {
       const isConfirmed = window.confirm("閉店（受付終了）に切り替えますか？\n\n※まだ待ち人数が残っていますが、自動的に「0人」にリセットされます。");
       if (!isConfirmed) return;
@@ -50,7 +52,8 @@ function AdminContent() {
     return <LoginForm />;
   }
 
-  const loggedInStoreId = user.email.split("@")[0];
+  // user.email が null の場合のガードも念のため
+  const loggedInStoreId = user.email ? user.email.split("@")[0] : "";
   if (loggedInStoreId !== targetStoreId) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-200 p-4">

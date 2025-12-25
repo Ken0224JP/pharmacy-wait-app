@@ -1,9 +1,14 @@
 import { useEffect, useRef, useCallback } from 'react';
 
-export const useWakeLock = (shouldLock) => {
-  // ステート(useState)ではなくRef(useRef)を使うことで、
-  // ロック取得時に再レンダリング（＝無限ループ）が起きないように修正
-  const wakeLockRef = useRef(null);
+// Wake Lock APIの型定義（標準ライブラリに含まれていない場合への保険）
+interface WakeLockSentinel extends EventTarget {
+  release: () => Promise<void>;
+  readonly released: boolean;
+  readonly type: WakeLockType;
+}
+
+export const useWakeLock = (shouldLock: boolean) => {
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const releaseLock = useCallback(async () => {
     if (wakeLockRef.current) {
@@ -18,16 +23,16 @@ export const useWakeLock = (shouldLock) => {
   }, []);
 
   const requestLock = useCallback(async () => {
-    // 既にロックがある場合、またはブラウザが非対応の場合は何もしない
     if (wakeLockRef.current) return;
+    // navigatorにwakeLockが存在するかチェック
     if (typeof navigator === 'undefined' || !('wakeLock' in navigator)) return;
 
     try {
-      const sentinel = await navigator.wakeLock.request('screen');
+      const sentinel = await navigator.wakeLock.request('screen') as WakeLockSentinel;
+      
       wakeLockRef.current = sentinel;
       console.log("Wake Lock active: 画面の常時点灯を有効にしました");
 
-      // システム側（省電力モードなど）で勝手に解除された場合のクリーンアップ
       sentinel.addEventListener('release', () => {
         if (wakeLockRef.current === sentinel) {
           wakeLockRef.current = null;
@@ -40,7 +45,6 @@ export const useWakeLock = (shouldLock) => {
 
   useEffect(() => {
     const handleVisibilityChange = async () => {
-      // タブが再びアクティブになった時にロックを再取得
       if (document.visibilityState === 'visible' && shouldLock) {
         await requestLock();
       }
@@ -55,7 +59,6 @@ export const useWakeLock = (shouldLock) => {
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      // アンマウント時やshouldLockがfalseになった時に確実に解放
       releaseLock();
     };
   }, [shouldLock, requestLock, releaseLock]);

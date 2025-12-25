@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
@@ -11,13 +11,12 @@ export default function LoginForm() {
   const router = useRouter();
   const auth = getAuth();
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     const email = `${loginId}@pharmacy.local`;
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // ログイン成功したらその店舗IDの管理画面へ遷移
       router.push(`/admin?id=${loginId}`);
     } catch (err) {
       console.error(err);

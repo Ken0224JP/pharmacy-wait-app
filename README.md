@@ -35,7 +35,7 @@
 ## **技術スタック**
 
 * **フレームワーク**: Next.js 16 (App Router)  
-* **言語**: JavaScript / React  
+* **言語**: Typescript  
 * **スタイリング**: Tailwind CSS  
 * **バックエンド (BaaS)**: Firebase  
   * **Authentication**: メール/パスワード認証  
@@ -329,26 +329,34 @@ npm run dev
 src/
 ├── app/
 │   ├── admin/
-│   │   └── page.js          # 店舗管理画面 (認証・状態管理・WakeLock制御)
+│   │   └── page.tsx           # 店舗管理画面 (認証・状態管理・WakeLock制御)
 │   ├── view/
-│   │   └── page.js          # 患者向け表示画面 (個別店舗の待ち状況表示)
-│   ├── layout.tsx           # アプリケーション全体のレイアウト
-│   └── page.js              # トップページ (全店舗の一覧表示)
+│   │   └── page.tsx           # 患者向け表示画面 (個別店舗の待ち状況表示)
+│   ├── globals.css            # グローバルスタイル (Tailwind CSS)
+│   ├── layout.tsx             # アプリケーション全体のレイアウト
+│   └── page.tsx               # トップページ (全店舗の一覧表示)
 │
-├── components/              # UIコンポーネント
-│   └── admin/
-│       ├── LoginForm.js     # 管理画面：ログインフォーム
-│       ├── SettingsModal.js # 管理画面：待ち時間設定モーダル
-│       ├── StatusPanel.js   # 管理画面：待ち人数操作・表示パネル
-│       └── ReportPanel.js   # 管理画面：集計結果表示パネル
+├── components/                # UIコンポーネント
+│   ├── admin/
+│   │   ├── LoginForm.tsx      # 管理画面：ログインフォーム
+│   │   ├── ReportPanel.tsx    # 管理画面：集計結果表示パネル
+│   │   ├── SettingsModal.tsx  # 管理画面：待ち時間設定モーダル
+│   │   └── StatusPanel.tsx    # 管理画面：待ち人数操作・表示パネル
+│   └── StoreCard.tsx          # 店舗カードコンポーネント (一覧表示用)
 │
-├── hooks/                   # カスタムフック (ロジックの分離)
-│   ├── useAllStores.js      # 全店舗のリアルタイムデータ取得
-│   ├── usePharmacyStore.js  # 個別店舗のデータ操作 (更新・ログ送信)
-│   └── useWakeLock.js       # 画面の常時点灯 (Wake Lock API) の制御
+├── hooks/                     # カスタムフック (UIロジックの分離)
+│   ├── useAllStores.ts        # 全店舗のリアルタイムデータ取得
+│   ├── usePharmacyStore.ts    # 個別店舗の状態管理
+│   └── useWakeLock.ts         # 画面の常時点灯 (Wake Lock API) の制御
 │
-└── lib/                     # ユーティリティ・設定
-    ├── constants.js         # 定数定義 (配色設定など)
-    ├── firebase.js          # Firebase初期化・設定
-    └── utils.js             # 共通ロジック (時間計算・フォーマット・テーマ判定)
+├── lib/                       # ユーティリティ・設定・API
+│   ├── api/                   # 外部通信ロジック
+│   │   ├── logger.ts          # GASへのログ送信
+│   │   └── store.ts           # Firestoreデータベース操作
+│   ├── constants.ts           # 定数定義 (配色設定など)
+│   ├── firebase.ts            # Firebase初期化・設定
+│   └── utils.ts               # 共通ロジック (時間計算・フォーマット・テーマ判定)
+│
+└── types/                     # 型定義
+    └── index.ts               # 共通の型定義 (Store, StoreDataなど)
 ```

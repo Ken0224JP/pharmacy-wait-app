@@ -2,10 +2,16 @@
 
 import { useState, useEffect } from "react";
 
-export default function SettingsModal({ isOpen, onClose, currentAvgTime, onSave }) {
-  const [inputAvgTime, setInputAvgTime] = useState(5);
+interface SettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentAvgTime: number;
+  onSave: (newTime: string) => void; // Hook側の仕様に合わせてstringで渡すか、numberに統一するか要調整。ここではHookがstringを受け取る想定で
+}
 
-  // モーダルが開かれたときに現在の値をセット
+export default function SettingsModal({ isOpen, onClose, currentAvgTime, onSave }: SettingsModalProps) {
+  const [inputAvgTime, setInputAvgTime] = useState<number | string>(5);
+
   useEffect(() => {
     if (isOpen) {
       setInputAvgTime(currentAvgTime || 5);
@@ -13,9 +19,10 @@ export default function SettingsModal({ isOpen, onClose, currentAvgTime, onSave 
   }, [isOpen, currentAvgTime]);
 
   const handleSave = () => {
-    const val = parseInt(inputAvgTime, 10);
+    const val = parseInt(String(inputAvgTime), 10);
     if (!isNaN(val) && val > 0) {
-      onSave(val);
+      // usePharmacyStoreのupdateAvgTimeはstringを期待している(Step1のコード参照)ため文字列化
+      onSave(String(val));
       onClose();
     } else {
       alert("有効な数値を入力してください");
@@ -26,6 +33,7 @@ export default function SettingsModal({ isOpen, onClose, currentAvgTime, onSave 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+      {/* 中身は変更なし */}
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-xs animate-[fadeIn_0.2s_ease-out]">
         <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">
           設定

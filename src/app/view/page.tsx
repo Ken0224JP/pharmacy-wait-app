@@ -11,11 +11,31 @@ import { formatTime, getStoreTheme, calculateWaitTime } from "@/lib/utils";
 function StoreViewContent() {
   const searchParams = useSearchParams();
   const storeId = searchParams.get("id");
+  
+  // Hookは既にTypeScript化されているため、戻り値の型も自動的に推論されます
   const { storeData, loading } = usePharmacyStore(storeId);
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p className="text-xl text-gray-500 animate-pulse">読み込み中...</p></div>;
-  if (!storeData) return <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4"><p className="text-xl text-red-500">店舗データが見つかりませんでした。</p><Link href="/" className="text-blue-500 underline">店舗一覧に戻る</Link></div>;
-  const { name, isOpen, waitCount, updatedAt } = storeData;
-  const waitTime = calculateWaitTime(waitCount, storeData.avgTime);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-xl text-gray-500 animate-pulse">読み込み中...</p>
+      </div>
+    );
+  }
+
+  if (!storeData) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
+        <p className="text-xl text-red-500">店舗データが見つかりませんでした。</p>
+        <Link href="/" className="text-blue-500 underline">
+          店舗一覧に戻る
+        </Link>
+      </div>
+    );
+  }
+
+  const { name, isOpen, waitCount, updatedAt, avgTime } = storeData;
+  const waitTime = calculateWaitTime(waitCount, avgTime);
   const theme = getStoreTheme(isOpen, waitCount);
 
   return (
