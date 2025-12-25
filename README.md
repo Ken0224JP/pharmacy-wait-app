@@ -185,18 +185,29 @@ npm run dev
 
 ## **ディレクトリ構成 (主要なファイル)**
 
-```
-src/  
-├── app/  
-│   ├── page.js           \# トップページ（店舗一覧）  
-│   ├── view/             \# 店舗詳細表示ページ (/view?id=xxx)  
-│   ├── admin/            \# 管理画面 (/admin?id=xxx)  
-│   └── globals.css       \# グローバルスタイル (Tailwind directives)  
-├── hooks/  
-│   ├── useAllStores.js   \# 全店舗データの取得ロジック  
-│   └── usePharmacyStore.js \# 単一店舗データの取得・更新ロジック (GAS送信処理含む)  
-└── lib/  
-    ├── firebase.js       \# Firebase初期化設定  
-    ├── utils.js          \# 共通の関数  
-    └── constants.js      \# 定数定義（カラー設定など）
+```text
+src/
+├── app/
+│   ├── admin/
+│   │   └── page.js          # 店舗管理画面 (認証・状態管理・WakeLock制御)
+│   ├── view/
+│   │   └── page.js          # 患者向け表示画面 (個別店舗の待ち状況表示)
+│   ├── layout.tsx           # アプリケーション全体のレイアウト
+│   └── page.js              # トップページ (全店舗の一覧表示)
+│
+├── components/              # UIコンポーネント
+│   └── admin/
+│       ├── LoginForm.js     # 管理画面：ログインフォーム
+│       ├── SettingsModal.js # 管理画面：待ち時間設定モーダル
+│       └── StatusPanel.js   # 管理画面：待ち人数操作・表示パネル
+│
+├── hooks/                   # カスタムフック (ロジックの分離)
+│   ├── useAllStores.js      # 全店舗のリアルタイムデータ取得
+│   ├── usePharmacyStore.js  # 個別店舗のデータ操作 (更新・ログ送信)
+│   └── useWakeLock.js       # 画面の常時点灯 (Wake Lock API) の制御
+│
+└── lib/                     # ユーティリティ・設定
+    ├── constants.js         # 定数定義 (配色設定など)
+    ├── firebase.js          # Firebase初期化・設定
+    └── utils.js             # 共通ロジック (時間計算・フォーマット・テーマ判定)
 ```

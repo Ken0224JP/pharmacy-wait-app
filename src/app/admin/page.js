@@ -7,10 +7,10 @@ import { usePharmacyStore } from "@/hooks/usePharmacyStore";
 import { getStoreTheme } from "@/lib/utils";
 import { useWakeLock } from "@/hooks/useWakeLock";
 
-// コンポーネントのインポート
 import LoginForm from "@/components/admin/LoginForm";
 import StatusPanel from "@/components/admin/StatusPanel";
 import SettingsModal from "@/components/admin/SettingsModal";
+import ReportPanel from "@/components/admin/ReportPanel";
 
 function AdminContent() {
   const searchParams = useSearchParams();
@@ -24,8 +24,6 @@ function AdminContent() {
 
   const { storeData, loading: dataLoading, toggleOpen, updateCount, updateAvgTime } = usePharmacyStore(targetStoreId);
 
-  // Wake Lock フック (店舗が営業中の場合のみロックを要求)
-  // useWakeLock 内で visibilitychange などの処理も完結しています
   useWakeLock(storeData?.isOpen || false);
 
   useEffect(() => {
@@ -46,27 +44,19 @@ function AdminContent() {
     toggleOpen();
   };
 
-  // --- 認証・ロード状態による表示分岐 ---
-
   if (authLoading) return <div className="p-10 text-center">認証確認中...</div>;
 
-  // 未ログインまたはID指定なし -> ログインフォーム
   if (!user || !targetStoreId) {
     return <LoginForm />;
   }
 
-  // ログイン中のIDとURLのIDが不一致
   const loggedInStoreId = user.email.split("@")[0];
   if (loggedInStoreId !== targetStoreId) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-200 p-4">
         <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
           <h2 className="text-xl font-bold text-red-600 mb-4">店舗不一致</h2>
-          <p className="text-gray-600 mb-6">ログイン中のID: <b>{loggedInStoreId}</b><br/>アクセス先のID: <b>{targetStoreId}</b></p>
-          <div className="flex flex-col gap-2">
-            <button onClick={() => router.push(`/admin?id=${loggedInStoreId}`)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">ログイン中の店舗管理画面へ移動</button>
-            <button onClick={handleLogout} className="text-gray-500 underline text-sm mt-2">ログアウトする</button>
-          </div>
+          <button onClick={() => router.push(`/admin?id=${loggedInStoreId}`)} className="bg-blue-600 text-white px-4 py-2 rounded">ログイン中の店舗へ移動</button>
         </div>
       </div>
     );
@@ -108,11 +98,19 @@ function AdminContent() {
       </header>
 
       <main className="max-w-md mx-auto p-6 mt-6 space-y-8 ">
-        <StatusPanel 
-          storeData={storeData} 
-          updateCount={updateCount} 
-          onOpenSettings={() => setIsSettingsOpen(true)}
-        />
+        {storeData.isOpen ? (
+          <StatusPanel 
+            storeData={storeData} 
+            updateCount={updateCount} 
+            onOpenSettings={() => setIsSettingsOpen(true)}
+          />
+        ) : (
+          /* ★変更: settingAvgTime を渡すように修正 */
+          <ReportPanel 
+            storeId={targetStoreId} 
+            settingAvgTime={storeData.avgTime} 
+          />
+        )}
       </main>
 
       <SettingsModal 
