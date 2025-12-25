@@ -1,7 +1,9 @@
 "use client";
 
 import { useAllStores } from "@/hooks/useAllStores";
-import StoreCard from "@/components/StoreCard";
+import Link from "next/link";
+// 作成した共通部品をインポート
+import StoreStatusDisplay from "@/components/StoreStatusDisplay";
 
 export default function Home() {
   const { stores, loading } = useAllStores();
@@ -22,7 +24,19 @@ export default function Home() {
         ) : (
           <div className="flex flex-wrap justify-center gap-6">
             {stores.map((store) => (
-              <StoreCard key={store.id} store={store} />
+              // StoreCardコンポーネントの代わりに、ここで直接Linkを書く
+              <Link 
+                key={store.id} 
+                href={`/view?id=${store.id}`} 
+                className="block group w-full max-w-sm"
+              >
+                <div className="hover:shadow-lg transition-shadow duration-300 h-full">
+                  <StoreStatusDisplay 
+                    store={store} 
+                    variant="card" 
+                  />
+                </div>
+              </Link>
             ))}
           </div>
         )}

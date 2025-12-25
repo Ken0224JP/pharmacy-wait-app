@@ -14,6 +14,19 @@ export const formatTime = (timestamp: Timestamp | Date | null | undefined): stri
 };
 
 /**
+ * タイムスタンプを "mm/dd HH:MM" 形式の文字列に変換
+ */
+export const formatDateTime = (timestamp: Timestamp | null) => {
+  if (!timestamp) return "";
+  const date = timestamp.toDate();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${month}/${day} ${hours}:${minutes}`;
+};
+
+/**
  * 店舗の状態と待ち人数に応じてカラー設定を取得
  */
 export const getStoreTheme = (isOpen: boolean, waitCount: number): ThemeColor => {

@@ -152,7 +152,7 @@ function doPost(e) {
 
 function doGet(e) {
   var targetStoreId = e.parameter.storeId;
-  
+   
   if (!targetStoreId) {
     return createJSONOutput({ error: "Store ID is required" });
   }
@@ -163,23 +163,24 @@ function doGet(e) {
   var lastRow = sheet.getLastRow();
   var startRow = Math.max(1, lastRow - 3000); 
   var numRows = lastRow - startRow + 1;
-  
+   
   if (numRows < 1) {
     return createJSONOutput({});
   }
 
   var data = sheet.getRange(startRow, 1, numRows, 4).getValues();
-  
+   
   // 集計用変数
   var arrivalQueue = []; 
   var totalWaitTimeMinutes = 0; 
   var resolvedPatients = 0; 
   var totalVisitors = 0; 
   var prevCount = 0; 
-  
+   
   // 営業時間管理用
   var lastOpenTime = null; // Dateオブジェクト
   var lastCloseTime = null; // Dateオブジェクト
+  var latestLogTime = null; // ループ内で最新のログ時刻を保持するための変数
 
   // ループ処理
   for (var i = 0; i < data.length; i++) {
@@ -190,6 +191,8 @@ function doGet(e) {
     if (String(storeId) !== String(targetStoreId)) continue;
 
     var timestamp = new Date(row[0]);
+    latestLogTime = timestamp; // 【追加】常に最新のログ時刻を更新
+
     var action = row[2];
     var currentCount = Number(row[3]);
 
@@ -200,21 +203,21 @@ function doGet(e) {
       resolvedPatients = 0;
       totalVisitors = 0;
       prevCount = 0;
-      
+       
       // 開店時刻を記録、閉店時刻はリセット
       lastOpenTime = timestamp;
       lastCloseTime = null; 
-      
+       
       continue; 
     }
-    
+     
     // CLOSE検知: 閉店時刻を記録
     if (action === "CLOSE") {
       lastCloseTime = timestamp;
       // CLOSEでも人数精算ロジックは通すため continue はしない
     }
 
-    // --- 人数増減ロジック (前回と同じ) ---
+    // --- 人数増減ロジック ---
     var diff = currentCount - prevCount;
     if (diff > 0) {
       for (var k = 0; k < diff; k++) {
@@ -240,7 +243,7 @@ function doGet(e) {
 
   // --- 結果の整形 ---
   var avgTime = resolvedPatients > 0 ? Math.round(totalWaitTimeMinutes / resolvedPatients) : 0;
-  
+   
   // 営業日・時間の計算
   var dateStr = "";
   var openTimeStr = "";
@@ -249,19 +252,15 @@ function doGet(e) {
 
   if (lastOpenTime) {
     // 日付 (YYYY-MM-DD)
-    dateStr = Utilities.formatDate(lastOpenTime, "JST", "yyyy/MM/dd");
+    dateStr = Utilities.formatDate(lastOpenTime, "Asia/Tokyo", "yyyy/MM/dd");
     // 開店時刻 (HH:mm)
-    openTimeStr = Utilities.formatDate(lastOpenTime, "JST", "HH:mm");
-    
+    openTimeStr = Utilities.formatDate(lastOpenTime, "Asia/Tokyo", "HH:mm");
+     
     // 閉店時刻と期間
-    // もしCLOSEログがない（営業中）場合は、最後のログ時刻または現在時刻を仮終了とする
-    var endTime = lastCloseTime ? lastCloseTime : new Date(); 
-    
-    if (lastCloseTime) {
-       closeTimeStr = Utilities.formatDate(lastCloseTime, "JST", "HH:mm");
-    } else {
-       closeTimeStr = "営業中";
-    }
+    // CLOSEログがあるならそれを使用。なければ最新のログ時刻(latestLogTime)を使用
+    var endTime = lastCloseTime ? lastCloseTime : (latestLogTime ? latestLogTime : new Date());
+     
+    closeTimeStr = Utilities.formatDate(endTime, "Asia/Tokyo", "HH:mm");
 
     // 期間（分）の計算
     var durationMillis = endTime.getTime() - lastOpenTime.getTime();
@@ -272,23 +271,22 @@ function doGet(e) {
   }
 
   var result = {
-    date: dateStr,           // "2023/12/25"
-    openTime: openTimeStr,   // "09:00"
-    closeTime: closeTimeStr, // "18:00" または "営業中"
-    duration: durationStr,   // "9時間0分"
+    date: dateStr,            // "2023/12/25"
+    openTime: openTimeStr,    // "09:00"
+    closeTime: closeTimeStr,  // "18:00" (CLOSEがない場合は最新ログ時刻)
+    duration: durationStr,    // "9時間0分"
     totalVisitors: totalVisitors,
     avgWaitTime: avgTime,
     resolvedCount: resolvedPatients
   };
-  
+   
   return createJSONOutput(result);
 }
 
 function createJSONOutput(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
-}
-```
+}```
 
 4. 「デプロイ」\>「新しいデプロイ」を選択します。  
    * **種類の選択**: ウェブアプリ  
@@ -342,7 +340,7 @@ src/
 │   │   ├── ReportPanel.tsx    # 管理画面：集計結果表示パネル
 │   │   ├── SettingsModal.tsx  # 管理画面：待ち時間設定モーダル
 │   │   └── StatusPanel.tsx    # 管理画面：待ち人数操作・表示パネル
-│   └── StoreCard.tsx          # 店舗カードコンポーネント (一覧表示用)
+│   └── StoreStatusDisplay.tsx # 店舗状況表示コンポーネント
 │
 ├── hooks/                     # カスタムフック (UIロジックの分離)
 │   ├── useAllStores.ts        # 全店舗のリアルタイムデータ取得
