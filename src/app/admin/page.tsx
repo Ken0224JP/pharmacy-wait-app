@@ -34,7 +34,10 @@ function AdminContent() {
     return () => unsubscribe();
   }, [auth]);
 
-  const handleLogout = () => signOut(auth);
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.replace("/admin"); // クエリパラメータを削除してリセット
+  };
 
   const handleToggleStatus = async () => {
     if (!storeData) return;
