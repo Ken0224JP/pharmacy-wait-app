@@ -197,5 +197,6 @@ src/
 │   └── usePharmacyStore.js \# 単一店舗データの取得・更新ロジック (GAS送信処理含む)  
 └── lib/  
     ├── firebase.js       \# Firebase初期化設定  
+    ├── utils.js          \# 共通の関数  
     └── constants.js      \# 定数定義（カラー設定など）
 ```
