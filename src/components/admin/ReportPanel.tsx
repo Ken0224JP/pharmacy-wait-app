@@ -12,6 +12,7 @@ interface ReportData {
   duration: string;
   openTime: string;
   closeTime: string;
+  maxWaitCount: number;
 }
 
 interface ReportPanelProps {
@@ -65,8 +66,6 @@ export default function ReportPanel({ storeId, settingAvgTime }: ReportPanelProp
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6 shadow-sm min-h-[200px]">
-       {/* UI部分は変更なしのため省略なしでそのまま記述 */}
-       {/* ... (元のJSXをそのまま維持) ... */}
        <div className="flex justify-between items-center pb-4 mb-4 min-h-[3rem]">
         <h3 className="font-bold text-gray-700 text-lg">直近の営業実績</h3>
         
@@ -121,6 +120,9 @@ export default function ReportPanel({ storeId, settingAvgTime }: ReportPanelProp
               <p className="text-gray-500 mb-1">総受付人数</p>
               <p className="text-7xl font-bold text-gray-800">
                 {report.totalVisitors}<span className="text-sm text-gray-400 ml-1">人</span>
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                  (最大同時待ち：{report.maxWaitCount}人)
               </p>
             </div>
           </div>

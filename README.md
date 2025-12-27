@@ -122,6 +122,7 @@ npm install
 3. 「拡張機能」\>「Apps Script」を開き、以下のコードを Code.gs に貼り付けます。  
 ```GAS
 // Code.gs
+
 function doPost(e) {
   try {
     // JSONデータを受け取る
@@ -176,6 +177,7 @@ function doGet(e) {
   var resolvedPatients = 0; 
   var totalVisitors = 0; 
   var prevCount = 0; 
+  var maxWaitCount = 0; 
    
   // 営業時間管理用
   var lastOpenTime = null; // Dateオブジェクト
@@ -191,7 +193,7 @@ function doGet(e) {
     if (String(storeId) !== String(targetStoreId)) continue;
 
     var timestamp = new Date(row[0]);
-    latestLogTime = timestamp; // 【追加】常に最新のログ時刻を更新
+    latestLogTime = timestamp; // 常に最新のログ時刻を更新
 
     var action = row[2];
     var currentCount = Number(row[3]);
@@ -203,6 +205,7 @@ function doGet(e) {
       resolvedPatients = 0;
       totalVisitors = 0;
       prevCount = 0;
+      maxWaitCount = 0; 
        
       // 開店時刻を記録、閉店時刻はリセット
       lastOpenTime = timestamp;
@@ -215,6 +218,11 @@ function doGet(e) {
     if (action === "CLOSE") {
       lastCloseTime = timestamp;
       // CLOSEでも人数精算ロジックは通すため continue はしない
+    }
+
+    // 最大人数の更新チェック
+    if (currentCount > maxWaitCount) {
+      maxWaitCount = currentCount;
     }
 
     // --- 人数増減ロジック ---
@@ -273,11 +281,12 @@ function doGet(e) {
   var result = {
     date: dateStr,            // "2023/12/25"
     openTime: openTimeStr,    // "09:00"
-    closeTime: closeTimeStr,  // "18:00" (CLOSEがない場合は最新ログ時刻)
+    closeTime: closeTimeStr,  // "18:00"
     duration: durationStr,    // "9時間0分"
     totalVisitors: totalVisitors,
     avgWaitTime: avgTime,
-    resolvedCount: resolvedPatients
+    resolvedCount: resolvedPatients,　// 待ち時間の算出対象となった患者の数(待ち時間が0分未満や300分以上は異常値として除外されています)
+    maxWaitCount: maxWaitCount // 最大待ち人数
   };
    
   return createJSONOutput(result);
