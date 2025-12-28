@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { COLOR_CONFIG, RATIO_THRESHOLD_LOW, RATIO_THRESHOLD_MEDIUM } from "@/lib/constants";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faClock, faUsers } from "@fortawesome/free-solid-svg-icons";
 
 const GAS_API_URL = process.env.NEXT_PUBLIC_GAS_API_URL;
 
@@ -98,11 +100,15 @@ export default function ReportPanel({ storeId, settingAvgTime }: ReportPanelProp
         </div>
       )}
 
-      {!loading && !error && report && report.date && (
+{!loading && !error && report && report.date && (
         <div className="animate-fade-in">
           <div className="flex justify-center divide-x divide-gray-200 mb-6">            
             <div className="w-1/2 text-center px-2">
-              <p className="text-gray-500 mb-1">平均待ち時間</p>
+              <div className="text-gray-500 mb-2 flex items-center justify-center gap-2">
+                <FontAwesomeIcon icon={faClock} className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium">平均待ち時間</span>
+              </div>
+              
               <p 
                 className="text-7xl font-bold transition-colors duration-300"
                 style={{ color: getWaitTimeColor(report.avgWaitTime) }}
@@ -117,7 +123,11 @@ export default function ReportPanel({ storeId, settingAvgTime }: ReportPanelProp
             </div>
 
             <div className="w-1/2 text-center px-2">
-              <p className="text-gray-500 mb-1">総受付人数</p>
+              <div className="text-gray-500 mb-2 flex items-center justify-center gap-2">
+                <FontAwesomeIcon icon={faUsers} className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium">総受付人数</span>
+              </div>
+
               <p className="text-7xl font-bold text-gray-800">
                 {report.totalVisitors}<span className="text-sm text-gray-400 ml-1">人</span>
               </p>
