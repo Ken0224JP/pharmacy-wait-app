@@ -87,7 +87,7 @@
 ### **3\. Firestore Security Rules**
 
 セキュリティルールは以下のように設定してください。  
-「ログイン中のメールアドレスの@前の部分」 と 「書き込もうとしているドキュメントID」 が一致する場合のみ書き込みを許可する設定になっています。  
+店舗データについては「ログイン中のメールアドレスの@前の部分」 と 「書き込もうとしているドキュメントID」 が一致する場合のみ書き込みを許可する設定になっています。  
 
 ```
 rules_version = '2';
@@ -105,8 +105,19 @@ service cloud.firestore {
     }
     // 操作ログ
     match /logs/{logId} {
-      // 読み取り・作成: ログイン済みユーザーのみ許可
-      allow read, create: if request.auth != null;      
+      // ■ Create (作成) の制限:
+      // 「ログインしている」かつ
+      // 「書き込もうとしているデータの storeId が、自分の認証メアドの店舗IDと一致する」場合のみ許可
+      allow create: if request.auth != null
+                    && request.resource.data.storeId + "@pharmacy.local" == request.auth.token.email;
+
+      // ■ Read (読み取り) の制限:
+      // 「ログインしている」かつ
+      // 「読み取ろうとしているデータの storeId が、自分の認証メアドの店舗IDと一致する」場合のみ許可
+      // ※ これにより、クエリ時には where("storeId", "==", "自店舗ID") が必須になります
+      allow read: if request.auth != null
+                  && resource.data.storeId + "@pharmacy.local" == request.auth.token.email;
+
       // 更新・削除: 改ざん防止のため禁止
       allow update, delete: if false;
     }
@@ -132,7 +143,6 @@ npm install
 ### **3\. 環境変数の設定**
 
 ルートディレクトリに .env.local ファイルを作成し、以下の環境変数を設定してください。  
-NEXT\_PUBLIC\_GAS\_API\_URL には、上記で発行したURLを貼り付けます。  
 
 ```
 # Firebase Configuration  
@@ -142,9 +152,6 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com  
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id  
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-
-# Logging API (Google Apps Script Web App URL)  
-NEXT_PUBLIC_GAS_API_URL=https://script.google.com/macros/s/xxxx/exec\
 ```
 
 ### **4\. 開発サーバーの起動**
