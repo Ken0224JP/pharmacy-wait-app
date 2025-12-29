@@ -111,8 +111,9 @@ function AdminContent() {
             onOpenSettings={() => setIsSettingsOpen(true)}
           />
         ) : (
+          /* 修正箇所: ReportPanelへstoreオブジェクト全体を渡すように変更 */
           <ReportPanel 
-            storeId={targetStoreId} 
+            store={{ ...storeData, id: targetStoreId }} 
             settingAvgTime={storeData.avgTime} 
           />
         )}

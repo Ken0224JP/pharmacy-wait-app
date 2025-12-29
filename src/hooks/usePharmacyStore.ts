@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StoreData } from "@/types";
 import * as storeApi from "@/lib/api/store";
-import * as logger from "@/lib/api/logger";
+import * as logger from "@/lib/api/logger"; // 修正されたloggerをインポート
 
 export const usePharmacyStore = (storeId: string | null) => {
   const [storeData, setStoreData] = useState<StoreData | null>(null);
@@ -41,12 +41,12 @@ export const usePharmacyStore = (storeId: string | null) => {
       // API呼び出し
       await storeApi.updateStoreStatus(storeId, nextIsOpen, shouldResetCount);
       
-      // ログ送信
+      // ログ送信 (修正: sendGasLog -> sendLog)
       const logCount = (!nextIsOpen) ? 0 : storeData.waitCount;
-      await logger.sendGasLog(storeId, nextIsOpen ? "OPEN" : "CLOSE", logCount);
+      await logger.sendLog(storeId, nextIsOpen ? "OPEN" : "CLOSE", logCount);
+      
     } catch (err) {
       console.error("Failed to toggle open status:", err);
-      // 必要であればここでUIへの通知（Toastなど）を行う
     }
   };
 
@@ -57,7 +57,10 @@ export const usePharmacyStore = (storeId: string | null) => {
       await storeApi.updateStoreWaitCount(storeId, isIncrement);
 
       const nextCount = storeData.waitCount + (isIncrement ? 1 : -1);
-      await logger.sendGasLog(storeId, isIncrement ? "INCREMENT" : "DECREMENT", nextCount);
+      
+      // ログ送信 (修正: sendGasLog -> sendLog)
+      await logger.sendLog(storeId, isIncrement ? "INCREMENT" : "DECREMENT", nextCount);
+      
     } catch (err) {
       console.error("Failed to update count:", err);
     }

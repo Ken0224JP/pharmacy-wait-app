@@ -1,20 +1,15 @@
-const GAS_API_URL = process.env.NEXT_PUBLIC_GAS_API_URL;
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-export const sendGasLog = async (storeId: string, action: string, resultCount: number) => {
-  if (!GAS_API_URL) {
-    console.warn("GAS_API_URL is not defined in environment variables.");
-    return;
-  }
-
+export const sendLog = async (storeId: string, action: string, resultCount: number) => {
   try {
-    await fetch(GAS_API_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ storeId, action, resultCount })
+    await addDoc(collection(db, "logs"), {
+      storeId,
+      action,
+      resultCount,
+      createdAt: serverTimestamp(),
     });
   } catch (err) {
-    console.error("Failed to send GAS log:", err);
-    // 将来的にSentryなどのエラー監視を入れる場合はここに記述
+    console.error("Log failed:", err);
   }
 };

@@ -4,77 +4,59 @@ import { useState, useEffect } from "react";
 import { COLOR_CONFIG, RATIO_THRESHOLD_LOW, RATIO_THRESHOLD_MEDIUM } from "@/lib/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClock, faUsers } from "@fortawesome/free-solid-svg-icons";
-
-const GAS_API_URL = process.env.NEXT_PUBLIC_GAS_API_URL;
-
-interface ReportData {
-  date: string;
-  avgWaitTime: number;
-  totalVisitors: number;
-  duration: string;
-  openTime: string;
-  closeTime: string;
-  maxWaitCount: number;
-}
+import { getOrUpdateDailyStats } from "@/lib/api/report";
+import { DailyStats, Store } from "@/types";
 
 interface ReportPanelProps {
-  storeId: string;
+  store: Store | null;
   settingAvgTime: number;
 }
 
-export default function ReportPanel({ storeId, settingAvgTime }: ReportPanelProps) {
-  const [report, setReport] = useState<ReportData | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function ReportPanel({ store, settingAvgTime }: ReportPanelProps) {
+  const [report, setReport] = useState<DailyStats | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+
+  const lastUpdatedAt = store?.updatedAt?.toMillis();
 
   useEffect(() => {
     const fetchReport = async () => {
-      if (!storeId || !GAS_API_URL) return;
-
+      if (!store) return;
       try {
         setLoading(true);
-        const url = `${GAS_API_URL}?storeId=${storeId}`;
-        const res = await fetch(url);
-        
-        if (!res.ok) throw new Error("Network response was not ok");
-        
-        const data = await res.json();
-        setReport(data);
         setError(false);
+        const data = await getOrUpdateDailyStats(store);
+        setReport(data);
       } catch (err) {
-        console.error("GAS Fetch Error:", err);
+        console.error("Report Fetch Error:", err);
         setError(true);
       } finally {
         setLoading(false);
       }
     };
-
     fetchReport();
-  }, [storeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store?.id, lastUpdatedAt]);
 
   const getWaitTimeColor = (actualTime: number) => {
     if (!settingAvgTime || settingAvgTime <= 0) return COLOR_CONFIG.low.accentColor;
-
     const ratio = actualTime / settingAvgTime;
-
-    if (ratio <= RATIO_THRESHOLD_LOW) {
-      return COLOR_CONFIG.low.accentColor;
-    } else if (ratio <= RATIO_THRESHOLD_MEDIUM) {
-      return COLOR_CONFIG.medium.accentColor;
-    } else {
-      return COLOR_CONFIG.high.accentColor;
-    }
+    if (ratio <= RATIO_THRESHOLD_LOW) return COLOR_CONFIG.low.accentColor;
+    else if (ratio <= RATIO_THRESHOLD_MEDIUM) return COLOR_CONFIG.medium.accentColor;
+    else return COLOR_CONFIG.high.accentColor;
   };
+
+  if (!store) return null;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6 shadow-sm min-h-[200px]">
        <div className="flex justify-between items-center pb-4 mb-4 min-h-[3rem]">
         <h3 className="font-bold text-gray-700 text-lg">直近の営業実績</h3>
-        
         <div className="text-right">
-          {!loading && report?.date && (
+          {/* report.date があればそれを、なければ store.updatedAt を表示 */}
+          {!loading && (report?.date || store.updatedAt) && (
             <span className="text-gray-400 text-lg animate-fade-in">
-              {report.date}
+              {report?.date || store.updatedAt?.toDate().toLocaleDateString("ja-JP")}
             </span>
           )}
         </div>
@@ -94,13 +76,13 @@ export default function ReportPanel({ storeId, settingAvgTime }: ReportPanelProp
         </div>
       )}
 
-      {!loading && !error && (!report || !report.date) && (
+      {!loading && !error && !report && (
         <div className="text-center py-10 text-gray-400 text-sm">
-          直近の営業データが見つかりませんでした
+          データが見つかりませんでした
         </div>
       )}
 
-{!loading && !error && report && report.date && (
+      {!loading && !error && report && (
         <div className="animate-fade-in">
           <div className="flex justify-center divide-x divide-gray-200 mb-6">            
             <div className="w-1/2 text-center px-2">
@@ -137,9 +119,15 @@ export default function ReportPanel({ storeId, settingAvgTime }: ReportPanelProp
             </div>
           </div>
 
+          {/* 修正箇所: 時間と時刻を分けて表示 */}
           <div className="text-center bg-gray-50 rounded-lg py-3 mb-2">
             <p className="text-sm font-bold text-gray-600">
-              営業時間：{report.duration} <span className="font-normal text-gray-500 ml-1">({report.openTime}〜{report.closeTime})</span>
+              営業時間：{report.duration} 
+              {report.openTime && report.closeTime && (
+                <span className="font-normal text-gray-500 ml-1">
+                  ({report.openTime}〜{report.closeTime})
+                </span>
+              )}
             </p>
           </div>
         </div>

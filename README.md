@@ -2,12 +2,12 @@
 
 近隣薬局の混雑状況や待ち時間をリアルタイムで可視化・管理するためのWebアプリケーションです。  
 患者様（ユーザー）はスマホ等から各薬局の待ち状況を確認でき、薬局側（管理者）はタブレット等で簡単に状況を更新できます。  
-また、店舗側の操作ログ（開店・閉店、人数の増減）は **Google Apps Script (GAS)** を経由して **Googleスプレッドシート** に自動的に記録される仕組みを備えています。
+店舗側の操作ログ（開店・閉店、人数の増減）は Firebase Firestore に記録され、管理画面で過去の営業実績として参照可能です。
 
 ## **概要**
 
 このアプリは、Next.js と Firebase を使用して構築されています。  
-リアルタイムデータベース（Firestore）を利用しているため、薬局側での操作は即座にユーザー画面に反映されます。
+リアルタイムデータベース（Firestore）を利用しているため、薬局側での操作は即座にユーザー画面に反映されます。また、ログの集計にはキャッシュ戦略を導入しており、Firestoreの読み取りコストを最小限に抑えつつ、正確な統計データを表示します。
 
 ### **主な機能**
 
@@ -29,8 +29,8 @@
   * **開店/閉店切り替え**: ワンタップで営業中と受付終了を切り替え。閉店操作時に人数を自動リセットする安全機能付き。  
   * **待ち時間目安のカスタマイズ**: 状況に応じて一人当たり待ち時間目安を設定・変更できます。  
   * **自動ロック回避（Wake Lock）**: ブラウザが対応している場合、管理画面で店舗ステータスが「開店（Open）」の間、デバイスの自動スリープ（画面ロック）を防止します。  
-* **ログ記録**: 操作内容（OPEN, CLOSE, INCREMENT, DECREMENT）と操作後の人数をスプレッドシートに自動記録。
-* **簡易集計機能**: 閉局中は、前回営業時の平均待ち時間・総受付人数・営業時間のまとめを表示。
+* **ログ記録**: 操作内容（OPEN, CLOSE, INCREMENT, DECREMENT）と操作後の人数をFirestoreに自動記録。
+* **簡易集計機能**: 閉局中は、直近営業日の平均待ち時間・総受付人数・営業時間のまとめを表示。
 
 ## **技術スタック**
 
@@ -39,8 +39,7 @@
 * **スタイリング**: Tailwind CSS  
 * **バックエンド (BaaS)**: Firebase  
   * **Authentication**: メール/パスワード認証  
-  * **Firestore**: リアルタイムデータベース  
-* **ログ収集**: Google Apps Script (GAS) / Google Sheets  
+  * **Firestore**: リアルタイムデータベース & ログ基盤
 * **その他**: FontAwesome (アイコン)
 
 ## **Firebase データベース設計 & 設定**
@@ -58,9 +57,8 @@
 
 ### **2\. Firestore Data Model**
 
-Firestoreのデータベース構造は以下の通りです。
-
-* **Collection**: stores  
+#### stores Collection
+  * **Collection**: stores  
   * **Document ID**: {storeId} (例: store\_xxx)
 
 | Field Name | Type | Description |
@@ -69,7 +67,22 @@ Firestoreのデータベース構造は以下の通りです。
 | isOpen | boolean | 営業中フラグ (true: 営業中, false: 受付終了) |
 | waitCount | number | 現在の待ち人数 |
 | updatedAt | timestamp | 最終更新日時 |
-| avgTime | number | 一人当たり待ち時間(分) |
+| avgTime | number | 一人当たり待ち時間設定(分) |
+| dailyReport | map | 集計結果のキャッシュ |
+| └ calculatedAt | timestamp | キャッシュ作成日時 |
+| └ data | map | 集計データオブジェクト (平均待ち時間, 人数など) |
+
+#### logs Collection
+  * **Collection**: logs  
+  * **Document ID**: Auto ID
+
+| Field Name | Type | Description |
+| :---- | :---- | :---- |
+| storeId | string | 店舗ID |
+| action | string | 操作内容 (OPEN, CLOSE, INCREMENT, DECREMENT) |
+| resultCount | number | 操作後の待ち人数 |
+| createdAt | timestamp | ログ作成日時 |
+
 
 ### **3\. Firestore Security Rules**
 
@@ -80,15 +93,22 @@ Firestoreのデータベース構造は以下の通りです。
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // 店舗データ
     match /stores/{storeId} {
       // 読み取りは誰でもOK
-      allow read: if true;
-      
+      allow read: if true;      
       // 書き込みは、「ログインしている」 かつ
       // 「ログインユーザーのメアドが、店舗ID + @pharmacy.local と一致する場合」のみ許可
       allow write: if request.auth != null
                    && request.auth.token.email == storeId + "@pharmacy.local";
+    }
+    // 操作ログ
+    match /logs/{logId} {
+      // 読み取り・作成: ログイン済みユーザーのみ許可
+      allow read, create: if request.auth != null;      
+      // 更新・削除: 改ざん防止のため禁止
+      allow update, delete: if false;
     }
   }
 }
@@ -109,203 +129,7 @@ cd pharmacy-wait-app
 npm install
 ```
 
-### **3\. Google Apps Script (GAS) の準備**
-
-ログ収集および集計用のAPIを作成します。
-
-1. Googleスプレッドシートを新規作成します。  
-2. 1行目に以下のヘッダーを設定します。  
-   * A列: timestamp  
-   * B列: storeId  
-   * C列: action  
-   * D列: resultCount  
-3. 「拡張機能」\>「Apps Script」を開き、以下のコードを Code.gs に貼り付けます。  
-```GAS
-// Code.gs
-
-function doPost(e) {
-  try {
-    // JSONデータを受け取る
-    const data = JSON.parse(e.postData.contents);
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-
-    // 現在時刻を「yyyy/MM/dd HH:mm:ss」形式（秒まで含む）に変換
-    const now = new Date();
-    const formattedDate = Utilities.formatDate(now, "Asia/Tokyo", "yyyy/MM/dd HH:mm:ss");
-
-    // 行を追加: 日時(秒付き), 店舗ID, 操作, 結果人数
-    sheet.appendRow([
-      formattedDate, 
-      data.storeId, 
-      data.action, 
-      data.resultCount
-    ]);
-
-    // 成功レスポンス (CORS対応)
-    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
-      .setMimeType(ContentService.MimeType.JSON);
-
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function doGet(e) {
-  var targetStoreId = e.parameter.storeId;
-   
-  if (!targetStoreId) {
-    return createJSONOutput({ error: "Store ID is required" });
-  }
-
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheets()[0];
-  // 直近3000行を取得（高速化）
-  var lastRow = sheet.getLastRow();
-  var startRow = Math.max(1, lastRow - 3000); 
-  var numRows = lastRow - startRow + 1;
-   
-  if (numRows < 1) {
-    return createJSONOutput({});
-  }
-
-  var data = sheet.getRange(startRow, 1, numRows, 4).getValues();
-   
-  // 集計用変数
-  var arrivalQueue = []; 
-  var totalWaitTimeMinutes = 0; 
-  var resolvedPatients = 0; 
-  var totalVisitors = 0; 
-  var prevCount = 0; 
-  var maxWaitCount = 0; 
-   
-  // 営業時間管理用
-  var lastOpenTime = null; // Dateオブジェクト
-  var lastCloseTime = null; // Dateオブジェクト
-  var latestLogTime = null; // ループ内で最新のログ時刻を保持するための変数
-
-  // ループ処理
-  for (var i = 0; i < data.length; i++) {
-    var row = data[i];
-    if (row[0] === "timestamp" || row[0] === "日時") continue;
-
-    var storeId = row[1];
-    if (String(storeId) !== String(targetStoreId)) continue;
-
-    var timestamp = new Date(row[0]);
-    latestLogTime = timestamp; // 常に最新のログ時刻を更新
-
-    var action = row[2];
-    var currentCount = Number(row[3]);
-
-    // OPEN検知: リセット処理
-    if (action === "OPEN") {
-      arrivalQueue = [];
-      totalWaitTimeMinutes = 0;
-      resolvedPatients = 0;
-      totalVisitors = 0;
-      prevCount = 0;
-      maxWaitCount = 0; 
-       
-      // 開店時刻を記録、閉店時刻はリセット
-      lastOpenTime = timestamp;
-      lastCloseTime = null; 
-       
-      continue; 
-    }
-     
-    // CLOSE検知: 閉店時刻を記録
-    if (action === "CLOSE") {
-      lastCloseTime = timestamp;
-      // CLOSEでも人数精算ロジックは通すため continue はしない
-    }
-
-    // 最大人数の更新チェック
-    if (currentCount > maxWaitCount) {
-      maxWaitCount = currentCount;
-    }
-
-    // --- 人数増減ロジック ---
-    var diff = currentCount - prevCount;
-    if (diff > 0) {
-      for (var k = 0; k < diff; k++) {
-        arrivalQueue.push(timestamp.getTime());
-        totalVisitors++;
-      }
-    } else if (diff < 0) {
-      var decreaseCount = Math.abs(diff);
-      for (var k = 0; k < decreaseCount; k++) {
-        if (arrivalQueue.length > 0) {
-          var arrivedAt = arrivalQueue.shift();
-          var leftAt = timestamp.getTime();
-          var waitMinutes = (leftAt - arrivedAt) / (1000 * 60);
-          if (waitMinutes > 0 && waitMinutes < 300) { 
-            totalWaitTimeMinutes += waitMinutes;
-            resolvedPatients++;
-          }
-        }
-      }
-    }
-    prevCount = currentCount;
-  }
-
-  // --- 結果の整形 ---
-  var avgTime = resolvedPatients > 0 ? Math.round(totalWaitTimeMinutes / resolvedPatients) : 0;
-   
-  // 営業日・時間の計算
-  var dateStr = "";
-  var openTimeStr = "";
-  var closeTimeStr = "";
-  var durationStr = "";
-
-  if (lastOpenTime) {
-    // 日付 (YYYY-MM-DD)
-    dateStr = Utilities.formatDate(lastOpenTime, "Asia/Tokyo", "yyyy/MM/dd");
-    // 開店時刻 (HH:mm)
-    openTimeStr = Utilities.formatDate(lastOpenTime, "Asia/Tokyo", "HH:mm");
-     
-    // 閉店時刻と期間
-    // CLOSEログがあるならそれを使用。なければ最新のログ時刻(latestLogTime)を使用
-    var endTime = lastCloseTime ? lastCloseTime : (latestLogTime ? latestLogTime : new Date());
-     
-    closeTimeStr = Utilities.formatDate(endTime, "Asia/Tokyo", "HH:mm");
-
-    // 期間（分）の計算
-    var durationMillis = endTime.getTime() - lastOpenTime.getTime();
-    var durationMinutes = Math.floor(durationMillis / (1000 * 60));
-    var hours = Math.floor(durationMinutes / 60);
-    var mins = durationMinutes % 60;
-    durationStr = hours + "時間" + mins + "分";
-  }
-
-  var result = {
-    date: dateStr,            // "2023/12/25"
-    openTime: openTimeStr,    // "09:00"
-    closeTime: closeTimeStr,  // "18:00"
-    duration: durationStr,    // "9時間0分"
-    totalVisitors: totalVisitors,
-    avgWaitTime: avgTime,
-    resolvedCount: resolvedPatients,　// 待ち時間の算出対象となった患者の数(待ち時間が0分未満や300分以上は異常値として除外されています)
-    maxWaitCount: maxWaitCount // 最大待ち人数
-  };
-   
-  return createJSONOutput(result);
-}
-
-function createJSONOutput(data) {
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-```
-
-4. 「デプロイ」\>「新しいデプロイ」を選択します。  
-   * **種類の選択**: ウェブアプリ  
-   * **説明**: 任意（例: Pharmacy Log API）  
-   * **次のユーザーとして実行**: 自分 (Me)  
-   * **アクセスできるユーザー**: **全員 (Anyone)**  
-5. デプロイ完了後に発行される **ウェブアプリ URL** をコピーします。
-
-### **4\. 環境変数の設定**
+### **3\. 環境変数の設定**
 
 ルートディレクトリに .env.local ファイルを作成し、以下の環境変数を設定してください。  
 NEXT\_PUBLIC\_GAS\_API\_URL には、上記で発行したURLを貼り付けます。  
@@ -323,7 +147,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_GAS_API_URL=https://script.google.com/macros/s/xxxx/exec\
 ```
 
-### **5\. 開発サーバーの起動**
+### **4\. 開発サーバーの起動**
 
 ```bash
 npm run dev
@@ -359,8 +183,10 @@ src/
 │
 ├── lib/                       # ユーティリティ・設定・API
 │   ├── api/                   # 外部通信ロジック
-│   │   ├── logger.ts          # GASへのログ送信
+│   │   ├── logger.ts          # Firestoreへのログ送信
+│   │   ├── report.ts          # レポート取得・キャッシュ管理API
 │   │   └── store.ts           # Firestoreデータベース操作
+│   ├── analytics.ts           # ログ集計ロジック
 │   ├── constants.ts           # 定数定義 (配色設定など)
 │   ├── firebase.ts            # Firebase初期化・設定
 │   └── utils.ts               # 共通ロジック (時間計算・フォーマット・テーマ判定)
