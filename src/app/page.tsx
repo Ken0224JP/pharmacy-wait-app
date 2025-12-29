@@ -2,7 +2,6 @@
 
 import { useAllStores } from "@/hooks/useAllStores";
 import Link from "next/link";
-// 作成した共通部品をインポート
 import StoreStatusDisplay from "@/components/StoreStatusDisplay";
 
 export default function Home() {
@@ -24,7 +23,6 @@ export default function Home() {
         ) : (
           <div className="flex flex-wrap justify-center gap-6">
             {stores.map((store) => (
-              // StoreCardコンポーネントの代わりに、ここで直接Linkを書く
               <Link 
                 key={store.id} 
                 href={`/view?id=${store.id}`} 

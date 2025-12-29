@@ -20,7 +20,7 @@ export const getOrUpdateDailyStats = async (store: Store) => {
   // 1. キャッシュチェック
   const report = store.dailyReport;
   
-  // ★修正: 書き込み直後(Latency Compensation中)は calculatedAt が null になるため
+  // 書き込み直後(Latency Compensation中)は calculatedAt が null になるため
   // それを検知して「キャッシュ有効」と判定させる
   const isPendingWrite = report && !report.calculatedAt;
   const calculatedAt = report?.calculatedAt?.toDate();

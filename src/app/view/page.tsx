@@ -4,12 +4,11 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import { usePharmacyStore } from "@/hooks/usePharmacyStore";
-import StoreStatusDisplay from "@/components/StoreStatusDisplay"; // 作成したコンポーネントをインポート
+import StoreStatusDisplay from "@/components/StoreStatusDisplay"; 
 
 function StoreViewContent() {
   const searchParams = useSearchParams();
   const storeId = searchParams.get("id");
-  
   const { storeData, loading } = usePharmacyStore(storeId);
 
   if (loading) {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StoreData } from "@/types";
 import * as storeApi from "@/lib/api/store";
-import * as logger from "@/lib/api/logger"; // 修正されたloggerをインポート
+import * as logger from "@/lib/api/logger"; 
 
 export const usePharmacyStore = (storeId: string | null) => {
   const [storeData, setStoreData] = useState<StoreData | null>(null);
@@ -41,7 +41,7 @@ export const usePharmacyStore = (storeId: string | null) => {
       // API呼び出し
       await storeApi.updateStoreStatus(storeId, nextIsOpen, shouldResetCount);
       
-      // ログ送信 (修正: sendGasLog -> sendLog)
+      // ログ送信
       const logCount = (!nextIsOpen) ? 0 : storeData.waitCount;
       await logger.sendLog(storeId, nextIsOpen ? "OPEN" : "CLOSE", logCount);
       
@@ -58,7 +58,7 @@ export const usePharmacyStore = (storeId: string | null) => {
 
       const nextCount = storeData.waitCount + (isIncrement ? 1 : -1);
       
-      // ログ送信 (修正: sendGasLog -> sendLog)
+      // ログ送信
       await logger.sendLog(storeId, isIncrement ? "INCREMENT" : "DECREMENT", nextCount);
       
     } catch (err) {
@@ -66,13 +66,13 @@ export const usePharmacyStore = (storeId: string | null) => {
     }
   };
 
-  const updateAvgTime = async (newTimeStr: string) => {
+  const updateAvgTime = async (newTime: number) => {
     if (!storeData || !storeId) return;
-    const time = parseInt(newTimeStr, 10);
-    if (isNaN(time) || time < 1) return;
+    // 1分未満などの無効な値は無視
+    if (newTime < 1) return;
 
     try {
-      await storeApi.updateStoreAvgTime(storeId, time);
+      await storeApi.updateStoreAvgTime(storeId, newTime);
     } catch (err) {
       console.error("Failed to update average time:", err);
     }

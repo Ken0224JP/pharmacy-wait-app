@@ -9,10 +9,9 @@ import { DailyStats, Store } from "@/types";
 
 interface ReportPanelProps {
   store: Store | null;
-  settingAvgTime: number;
 }
 
-export default function ReportPanel({ store, settingAvgTime }: ReportPanelProps) {
+export default function ReportPanel({ store }: ReportPanelProps) {
   const [report, setReport] = useState<DailyStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -35,25 +34,28 @@ export default function ReportPanel({ store, settingAvgTime }: ReportPanelProps)
       }
     };
     fetchReport();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store?.id, lastUpdatedAt]);
+
+  // storeがない場合は表示しない（早期リターン）
+  if (!store) return null;
+
+  const settingAvgTime = store.avgTime;
 
   const getWaitTimeColor = (actualTime: number) => {
     if (!settingAvgTime || settingAvgTime <= 0) return COLOR_CONFIG.low.accentColor;
+    
     const ratio = actualTime / settingAvgTime;
+    
     if (ratio <= RATIO_THRESHOLD_LOW) return COLOR_CONFIG.low.accentColor;
     else if (ratio <= RATIO_THRESHOLD_MEDIUM) return COLOR_CONFIG.medium.accentColor;
     else return COLOR_CONFIG.high.accentColor;
   };
-
-  if (!store) return null;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6 shadow-sm min-h-[200px]">
        <div className="flex justify-between items-center pb-4 mb-4 min-h-[3rem]">
         <h3 className="font-bold text-gray-700 text-lg">直近の営業実績</h3>
         <div className="text-right">
-          {/* report.date があればそれを、なければ store.updatedAt を表示 */}
           {!loading && (report?.date || store.updatedAt) && (
             <span className="text-gray-400 text-lg animate-fade-in">
               {report?.date || store.updatedAt?.toDate().toLocaleDateString("ja-JP")}
@@ -119,7 +121,6 @@ export default function ReportPanel({ store, settingAvgTime }: ReportPanelProps)
             </div>
           </div>
 
-          {/* 修正箇所: 時間と時刻を分けて表示 */}
           <div className="text-center bg-gray-50 rounded-lg py-3 mb-2">
             <p className="text-sm font-bold text-gray-600">
               営業時間：{report.duration} 

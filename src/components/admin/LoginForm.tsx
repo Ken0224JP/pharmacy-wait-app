@@ -11,7 +11,7 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const router = useRouter();
   const auth = getAuth();
-
+  
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError("");

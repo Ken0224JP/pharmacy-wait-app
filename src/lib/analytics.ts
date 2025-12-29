@@ -1,5 +1,7 @@
 import { DailyStats } from "@/types";
 import { Timestamp } from "firebase/firestore";
+import { formatTime } from "@/lib/utils";
+import { MAX_VALID_WAIT_MINUTES } from "@/lib/constants";
 
 export const calculateDailyStats = (logs: any[], targetDate: Date): DailyStats => {
   // --- 集計用変数 ---
@@ -42,19 +44,14 @@ export const calculateDailyStats = (logs: any[], targetDate: Date): DailyStats =
     const action = log.action;
     const currentCount = Number(log.resultCount);
 
-    // ★修正箇所: OPEN時のリセット処理を廃止
     if (action === "OPEN") {
-      // 以前のリセット処理 (arrivalQueue = [] など) は削除し、積算させる
-
-      // 開店時刻: その日まだ記録されていなければ（＝最初のOPENなら）記録
-      // 2回目以降のOPEN（昼休み明けなど）では更新しない
+      // 開店時刻: その日まだ記録されていなければ記録
       if (!lastOpenTime) {
         lastOpenTime = timestamp;
       }
       
-      // 閉店時刻: 営業再開したのでリセット（営業中の状態にする）
+      // 閉店時刻リセット（営業中の状態にする）
       lastCloseTime = null;
-      
       continue;
     }
 
@@ -80,7 +77,9 @@ export const calculateDailyStats = (logs: any[], targetDate: Date): DailyStats =
           if (arrivedAt !== undefined) {
             const leftAt = timestamp;
             const waitMinutes = (leftAt - arrivedAt) / (1000 * 60);
-            if (waitMinutes > 0 && waitMinutes < 300) {
+            
+            // 異常値（長時間放置など）の除外
+            if (waitMinutes > 0 && waitMinutes < MAX_VALID_WAIT_MINUTES) {
               totalWaitTimeMinutes += waitMinutes;
               resolvedPatients++;
             }
@@ -111,23 +110,16 @@ export const calculateDailyStats = (logs: any[], targetDate: Date): DailyStats =
     const d = openDateObj.getDate().toString().padStart(2, '0');
     dateStr = `${y}/${m}/${d}`;
 
-    // 時刻フォーマット関数
-    const formatTime = (ms: number) => {
-      const date = new Date(ms);
-      const hh = date.getHours().toString().padStart(2, '0');
-      const mm = date.getMinutes().toString().padStart(2, '0');
-      return `${hh}:${mm}`;
-    };
-
-    openTimeStr = formatTime(lastOpenTime);
+    // 時刻フォーマット (utilsの関数を使用)
+    openTimeStr = formatTime(openDateObj);
 
     // 終了時刻の確定
-    // CLOSEログがあればそれ、なければ最新ログ、それもなければ現在時刻
     const endTime = lastCloseTime 
       ? lastCloseTime 
       : (latestLogTime ? latestLogTime : new Date().getTime());
 
-    closeTimeStr = formatTime(endTime);
+    // Dateオブジェクトに変換して渡す
+    closeTimeStr = formatTime(new Date(endTime));
 
     // 期間（分）の計算
     const durationMillis = endTime - lastOpenTime;

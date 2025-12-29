@@ -6,7 +6,7 @@ interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentAvgTime: number;
-  onSave: (newTime: string) => void; // Hook側の仕様に合わせてstringで渡すか、numberに統一するか要調整。ここではHookがstringを受け取る想定で
+  onSave: (newTime: number) => void;
 }
 
 export default function SettingsModal({ isOpen, onClose, currentAvgTime, onSave }: SettingsModalProps) {
@@ -19,10 +19,11 @@ export default function SettingsModal({ isOpen, onClose, currentAvgTime, onSave 
   }, [isOpen, currentAvgTime]);
 
   const handleSave = () => {
-    const val = parseInt(String(inputAvgTime), 10);
+    // 入力値が文字列の場合もあるため数値変換（空文字等のケア）
+    const val = typeof inputAvgTime === 'string' ? parseInt(inputAvgTime, 10) : inputAvgTime;
+
     if (!isNaN(val) && val > 0) {
-      // usePharmacyStoreのupdateAvgTimeはstringを期待している(Step1のコード参照)ため文字列化
-      onSave(String(val));
+      onSave(val);
       onClose();
     } else {
       alert("有効な数値を入力してください");
@@ -33,7 +34,6 @@ export default function SettingsModal({ isOpen, onClose, currentAvgTime, onSave 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
-      {/* 中身は変更なし */}
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-xs animate-[fadeIn_0.2s_ease-out]">
         <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">
           設定
