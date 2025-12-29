@@ -26,7 +26,7 @@ export const calculateDailyStats = (logs: any[], targetDate: Date): DailyStats =
     date: "",
     openTime: "",
     closeTime: "",
-    duration: "-",
+    duration: "データなし",
   };
 
   if (!logs || logs.length === 0) {

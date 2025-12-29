@@ -94,44 +94,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ■ 緩やかなバリデーション関数 ==============================    
-    // 値が存在しない、または null なら OK。
-    // 値が入っている場合だけ、指定の型であることをチェックする    
-    function isOptionalInt(data, field) {
-      return !(field in data) || data[field] == null || data[field] is int;
-    }
-    function isOptionalBool(data, field) {
-      return !(field in data) || data[field] == null || data[field] is bool;
-    }
-    function isOptionalMap(data, field) {
-      return !(field in data) || data[field] == null || data[field] is map;
-    }
-    // 更新時刻の検証:
-    // 1. 今回の更新で updatedAt が変更されていない (dailyReport更新時など)
-    // 2. または、変更されているなら現在時刻 (isOpen変更時など)
-    // 3. または、そもそも updatedAt が null (初期データなど)
-    function isValidTimestamp(request, resource) {
-      return request.resource.data.updatedAt == resource.data.updatedAt
-          || request.resource.data.updatedAt == request.time
-          || request.resource.data.updatedAt == null;
-    }
-
-    // ============================================================
-
     // 店舗データ
     match /stores/{storeId} {
       // ■ 読み取りは誰でもOK
       allow read: if true;
-      // ■ 書き込みは、「ログインしている」 かつ
+      // 書き込みは、「ログインしている」 かつ
       // 「ログインユーザーのメアドが、店舗ID + @pharmacy.local と一致する場合」のみ許可
       allow update: if request.auth != null
                    && request.auth.token.email == storeId + "@pharmacy.local"
-                   // バリデーション
-                   && isOptionalInt(request.resource.data, 'waitCount')
-                   && isOptionalInt(request.resource.data, 'avgTime')
-                   && isOptionalBool(request.resource.data, 'isOpen')
-                   && isOptionalMap(request.resource.data, 'dailyReport')
-                   && isValidTimestamp(request, resource);
+                   // 簡易バリデーション
+                   && (!('waitCount' in request.resource.data) || request.resource.data.waitCount is int)
+                   && (!('avgTime' in request.resource.data) || request.resource.data.avgTime is number)
+                   && (!('isOpen' in request.resource.data) || request.resource.data.isOpen is bool)
+                   && (!('dailyReport' in request.resource.data) || request.resource.data.dailyReport is map);
     }
 
     // 操作ログ
