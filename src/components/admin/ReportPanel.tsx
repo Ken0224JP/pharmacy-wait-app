@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { COLOR_CONFIG, RATIO_THRESHOLD_LOW, RATIO_THRESHOLD_MEDIUM } from "@/lib/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClock, faUsers } from "@fortawesome/free-solid-svg-icons";
@@ -15,8 +15,7 @@ export default function ReportPanel({ store }: ReportPanelProps) {
   const [report, setReport] = useState<DailyStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-
-  const lastUpdatedAt = store?.updatedAt?.toMillis();
+  const lastFetchedStoreId = useRef<string | null>(null);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -33,8 +32,19 @@ export default function ReportPanel({ store }: ReportPanelProps) {
         setLoading(false);
       }
     };
-    fetchReport();
-  }, [store?.id, lastUpdatedAt]);
+    // ▼▼▼ 無駄に発火し続けないための制御ロジック ▼▼▼    
+    // 条件1: 店舗が切り替わった（または初回ロード）かどうか
+    const isStoreChanged = lastFetchedStoreId.current !== store?.id;    
+    // 条件2: 現在「閉店」状態かどうか
+    const isClosed = store?.isOpen === false;
+    // 「店舗が変わった時」または「閉店時」のみ実行する
+    // （＝同じ店舗で Open になった時は実行されない）
+    if (store?.id && (isStoreChanged || isClosed)) {
+      fetchReport();
+      // 取得したIDを記憶
+      lastFetchedStoreId.current = store.id;
+    }    
+  }, [store?.id, store?.isOpen]); 
 
   // storeがない場合は表示しない（早期リターン）
   if (!store) return null;
