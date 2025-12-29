@@ -87,38 +87,70 @@
 ### **3\. Firestore Security Rules**
 
 セキュリティルールは以下のように設定してください。  
-店舗データについては「ログイン中のメールアドレスの@前の部分」 と 「書き込もうとしているドキュメントID」 が一致する場合のみ書き込みを許可する設定になっています。  
-
+基本的に「ログイン中のメールアドレスの@前の部分」 と 「書き込もうとしているドキュメントID」 が一致する場合のみ書き込みを許可する設定になっています。  
+入力のバリデーションは簡易的に行っていますが、必要に応じて強化してください。
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ■ 緩やかなバリデーション関数 ==============================    
+    // 値が存在しない、または null なら OK。
+    // 値が入っている場合だけ、指定の型であることをチェックする    
+    function isOptionalInt(data, field) {
+      return !(field in data) || data[field] == null || data[field] is int;
+    }
+    function isOptionalBool(data, field) {
+      return !(field in data) || data[field] == null || data[field] is bool;
+    }
+    function isOptionalMap(data, field) {
+      return !(field in data) || data[field] == null || data[field] is map;
+    }
+    // 更新時刻の検証:
+    // 1. 今回の更新で updatedAt が変更されていない (dailyReport更新時など)
+    // 2. または、変更されているなら現在時刻 (isOpen変更時など)
+    // 3. または、そもそも updatedAt が null (初期データなど)
+    function isValidTimestamp(request, resource) {
+      return request.resource.data.updatedAt == resource.data.updatedAt
+          || request.resource.data.updatedAt == request.time
+          || request.resource.data.updatedAt == null;
+    }
+
+    // ============================================================
+
     // 店舗データ
     match /stores/{storeId} {
-      // 読み取りは誰でもOK
-      allow read: if true;      
-      // 書き込みは、「ログインしている」 かつ
+      // ■ 読み取りは誰でもOK
+      allow read: if true;
+      // ■ 書き込みは、「ログインしている」 かつ
       // 「ログインユーザーのメアドが、店舗ID + @pharmacy.local と一致する場合」のみ許可
-      allow write: if request.auth != null
-                   && request.auth.token.email == storeId + "@pharmacy.local";
+      allow update: if request.auth != null
+                   && request.auth.token.email == storeId + "@pharmacy.local"
+                   // バリデーション
+                   && isOptionalInt(request.resource.data, 'waitCount')
+                   && isOptionalInt(request.resource.data, 'avgTime')
+                   && isOptionalBool(request.resource.data, 'isOpen')
+                   && isOptionalMap(request.resource.data, 'dailyReport')
+                   && isValidTimestamp(request, resource);
     }
+
     // 操作ログ
     match /logs/{logId} {
+      // ■ Read (読み取り) の制限:
+      // 「ログインしている」かつ
+      // 「読み取ろうとしているデータの storeId が、自分の認証メアドの店舗IDと一致する」場合のみ許可 
+      allow read: if request.auth != null
+                  && resource.data.storeId + "@pharmacy.local" == request.auth.token.email;
       // ■ Create (作成) の制限:
       // 「ログインしている」かつ
       // 「書き込もうとしているデータの storeId が、自分の認証メアドの店舗IDと一致する」場合のみ許可
       allow create: if request.auth != null
-                    && request.resource.data.storeId + "@pharmacy.local" == request.auth.token.email;
-
-      // ■ Read (読み取り) の制限:
-      // 「ログインしている」かつ
-      // 「読み取ろうとしているデータの storeId が、自分の認証メアドの店舗IDと一致する」場合のみ許可
-      // ※ これにより、クエリ時には where("storeId", "==", "自店舗ID") が必須になります
-      allow read: if request.auth != null
-                  && resource.data.storeId + "@pharmacy.local" == request.auth.token.email;
-
-      // 更新・削除: 改ざん防止のため禁止
+                    && request.resource.data.storeId + "@pharmacy.local" == request.auth.token.email
+                    // 許可されたアクションのみ
+                    && request.resource.data.action in ["OPEN", "CLOSE", "INCREMENT", "DECREMENT"]
+                    // サーバー時刻のみ
+                    && request.resource.data.createdAt == request.time;
+      // ■ 更新・削除: 改ざん防止のため禁止
       allow update, delete: if false;
     }
   }
