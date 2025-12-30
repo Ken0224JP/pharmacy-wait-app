@@ -1,8 +1,8 @@
 import { db } from "@/lib/firebase";
 import { doc, setDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
-import { FIRESTORE_COLLECTION_LOGS } from "@/lib/constants";
+import { FIRESTORE_COLLECTION_LOGS, LogAction } from "@/lib/constants";
 
-export const sendLog = async (storeId: string, action: string, resultCount: number) => {
+export const sendLog = async (storeId: string, action: LogAction, resultCount: number) => {
   try {
     // 1. 今日の日付文字列を作成 (クライアントの端末時刻を使用)
     const now = new Date();

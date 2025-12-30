@@ -59,10 +59,11 @@ export const MAX_VALID_WAIT_MINUTES = 300;
 // その他の設定
 // ==========================================
 
-/** ログのアクション種別 */
+/** ログのアクション種別と型定義 */
 export const LOG_ACTIONS = {
   OPEN: "OPEN",
   CLOSE: "CLOSE",
   INCREMENT: "INCREMENT",
   DECREMENT: "DECREMENT",
 } as const;
+export type LogAction = typeof LOG_ACTIONS[keyof typeof LOG_ACTIONS];

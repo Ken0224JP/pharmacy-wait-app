@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase/firestore";
+import type { LogAction } from "@/lib/constants";
 
 // 集計結果の型定義
 export interface DailyStats {
@@ -33,7 +34,7 @@ export type StoreReportDocument = {
 };
 
 export interface LogEntry {
-  action: string;
+  action: LogAction;
   resultCount: number;
   timestamp: number; // 配列内で扱いやすいようミリ秒(number)で保存
 }
