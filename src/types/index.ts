@@ -20,15 +20,17 @@ export interface StoreData {
   waitCount: number;
   avgTime: number;
   updatedAt: Timestamp | null;
-  dailyReport?: {
-    calculatedAt: Timestamp;
-    data: DailyStats;
-  };
 }
 
 export interface Store extends StoreData {
   id: string;
 }
+
+export type StoreReportDocument = {
+  storeId: string;
+  calculatedAt: Timestamp;
+  data: DailyStats; 
+};
 
 export interface LogEntry {
   action: string;
