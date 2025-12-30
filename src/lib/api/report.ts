@@ -1,29 +1,31 @@
 import { db } from "@/lib/firebase";
 import { 
   doc, 
-  getDoc,       // ★追加
-  setDoc,       // ★updateDocではなくsetDocを使います
+  getDoc,
+  setDoc,
   serverTimestamp, 
   collection, 
   query,      
   where,      
   getDocs,
-  Timestamp     // ★追加
+  Timestamp 
 } from "firebase/firestore";
 import { calculateDailyStats } from "@/lib/analytics";
-import { Store, DailyLogDocument, StoreReportDocument } from "@/types"; // StoreReportDocumentを追加
+import { Store, DailyLogDocument, StoreReportDocument } from "@/types";
+import { 
+  FIRESTORE_COLLECTION_LOGS,    
+  FIRESTORE_COLLECTION_REPORTS  
+} from "@/lib/constants";
 
-// 定数としてコレクション名を定義しておくと安全です
-const COLLECTION_REPORTS = "storeReports";
 
 export const getOrUpdateDailyStats = async (store: Store) => {
   const storeId = store.id;
   const storeUpdatedAt = store.updatedAt ? store.updatedAt.toDate() : new Date();
   
   // ---------------------------------------------------------
-  // 1. キャッシュチェック (保存先が変わります)
+  // 1. キャッシュチェック
   // ---------------------------------------------------------
-  const reportRef = doc(db, COLLECTION_REPORTS, storeId);
+  const reportRef = doc(db, FIRESTORE_COLLECTION_REPORTS, storeId);
   const reportSnap = await getDoc(reportRef);
   
   let cachedReport: StoreReportDocument | null = null;
@@ -52,7 +54,7 @@ export const getOrUpdateDailyStats = async (store: Store) => {
   const dateStr = `${y}-${m}-${d}`;
 
   const q = query(
-    collection(db, "dailyLogs"),
+    collection(db, FIRESTORE_COLLECTION_LOGS),
     where("storeId", "==", storeId),
     where("date", "==", dateStr)
   );
@@ -72,9 +74,9 @@ export const getOrUpdateDailyStats = async (store: Store) => {
   const stats = calculateDailyStats(logs, targetDate);
 
   // ---------------------------------------------------------
-  // 3. 新しい場所にキャッシュを保存
+  // 3. キャッシュを保存
   // ---------------------------------------------------------
-  // stores/{id} ではなく、storeReports/{id} に保存します。
+  // storeReports/{id} に保存します。
   // ここは一般ユーザーからは読み取れないようにセキュリティルールで守ります。
   
   const newReport: StoreReportDocument = {

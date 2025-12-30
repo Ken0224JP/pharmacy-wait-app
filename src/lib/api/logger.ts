@@ -1,5 +1,6 @@
 import { db } from "@/lib/firebase";
 import { doc, setDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
+import { FIRESTORE_COLLECTION_LOGS } from "@/lib/constants";
 
 export const sendLog = async (storeId: string, action: string, resultCount: number) => {
   try {
@@ -23,7 +24,7 @@ export const sendLog = async (storeId: string, action: string, resultCount: numb
     // 4. 保存実行
     // setDoc + merge: true を使うことで、
     // "その日のドキュメントがなければ作成、あれば更新" を自動でやってくれます
-    const logRef = doc(db, "dailyLogs", docId);
+    const logRef = doc(db, FIRESTORE_COLLECTION_LOGS, docId);
     
     await setDoc(logRef, {
       storeId,

@@ -3,6 +3,23 @@ export interface ThemeColor {
   headerText: string;
   accentColor: string;
 }
+// ==========================================
+// Firestore 関連
+// ==========================================
+// /** 店舗情報コレクション */
+export const FIRESTORE_COLLECTION_STORES = "stores";
+/** ログ（日次アクション）コレクション */
+export const FIRESTORE_COLLECTION_LOGS = "dailyLogs";
+/** 店舗別レポート（集計結果）コレクション */
+export const FIRESTORE_COLLECTION_REPORTS = "storeReports";
+
+/** 認証用メールアドレスのサフィックス */
+export const AUTH_DOMAIN_SUFFIX = "@pharmacy.local";
+
+
+// ==========================================
+// 混雑状況関連の設定
+// ==========================================
 
 /** 混雑状況によるテーマカラーの設定 */
 export const COLOR_CONFIG: Record<string, ThemeColor> = {
@@ -28,14 +45,24 @@ export const THRESHOLD_MEDIUM = 5;
 export const RATIO_THRESHOLD_LOW = 1.5;
 export const RATIO_THRESHOLD_MEDIUM = 2.0;
 
+
+// ==========================================
+// 待ち時間関係の設定
+// ==========================================
+
 /** デフォルトの1人あたりの待ち時間（分） */
 export const DEFAULT_AVG_WAIT_MINUTES = 5;
-
 /** 集計時の計算に用いる待ち時間上限（分） */
 export const MAX_VALID_WAIT_MINUTES = 300;
 
-/** Firestoreのコレクション名 */
-export const FIRESTORE_COLLECTION_STORES = "stores";
+// ==========================================
+// その他の設定
+// ==========================================
 
-/** 認証用メールアドレスのサフィックス */
-export const AUTH_DOMAIN_SUFFIX = "@pharmacy.local";
+/** ログのアクション種別 */
+export const LOG_ACTIONS = {
+  OPEN: "OPEN",
+  CLOSE: "CLOSE",
+  INCREMENT: "INCREMENT",
+  DECREMENT: "DECREMENT",
+} as const;

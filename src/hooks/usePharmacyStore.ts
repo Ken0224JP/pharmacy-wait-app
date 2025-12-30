@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { StoreData } from "@/types";
 import * as storeApi from "@/lib/api/store";
 import * as logger from "@/lib/api/logger"; 
+import { LOG_ACTIONS } from "@/lib/constants";
 
 export const usePharmacyStore = (storeId: string | null) => {
   const [storeData, setStoreData] = useState<StoreData | null>(null);
@@ -43,7 +44,7 @@ export const usePharmacyStore = (storeId: string | null) => {
       
       // ログ送信
       const logCount = (!nextIsOpen) ? 0 : storeData.waitCount;
-      await logger.sendLog(storeId, nextIsOpen ? "OPEN" : "CLOSE", logCount);
+      await logger.sendLog(storeId, nextIsOpen ? LOG_ACTIONS.OPEN : LOG_ACTIONS.CLOSE, logCount);
       
     } catch (err) {
       console.error("Failed to toggle open status:", err);
@@ -59,7 +60,7 @@ export const usePharmacyStore = (storeId: string | null) => {
       const nextCount = storeData.waitCount + (isIncrement ? 1 : -1);
       
       // ログ送信
-      await logger.sendLog(storeId, isIncrement ? "INCREMENT" : "DECREMENT", nextCount);
+      await logger.sendLog(storeId, isIncrement ? LOG_ACTIONS.INCREMENT : LOG_ACTIONS.DECREMENT, nextCount);
       
     } catch (err) {
       console.error("Failed to update count:", err);

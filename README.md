@@ -129,9 +129,6 @@ service cloud.firestore {
                     && (!('waitCount' in request.resource.data) || request.resource.data.waitCount is int)
                     && (!('avgTime' in request.resource.data) || request.resource.data.avgTime is number)
                     && (!('isOpen' in request.resource.data) || request.resource.data.isOpen is bool)
-                    
-                    // ★重要: dailyReport フィールドが含まれていたら拒否 (誤送信防止)
-                    && !('dailyReport' in request.resource.data);
     }
 
     // =========================================================
