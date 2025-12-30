@@ -7,7 +7,9 @@
 ## **概要**
 
 このアプリは、Next.js と Firebase を使用して構築されています。  
-リアルタイムデータベース（Firestore）を利用しているため、薬局側での操作は即座にユーザー画面に反映されます。また、ログの集計にはキャッシュ戦略を導入しており、Firestoreの読み取りコストを最小限に抑えつつ、正確な統計データを表示します。
+リアルタイムデータベース（Firestore）を利用しているため、薬局側での操作は即座にユーザー画面に反映されます。
+また、ログの保存には 「日次バケット（Daily Bucketing）」 方式を採用しており、集計に関してもキャッシュを実装しており、
+Firestoreの読み書きコストを最小限に抑えつつ、効率的なデータ管理を目指しています。
 
 ### **主な機能**
 
@@ -72,23 +74,25 @@
 | └ calculatedAt | timestamp | キャッシュ作成日時 |
 | └ data | map | 集計データオブジェクト (平均待ち時間, 人数など) |
 
-#### logs Collection
-  * **Collection**: logs  
-  * **Document ID**: Auto ID
+#### dailyLogs Collection (日次バケット)
+  * **Collection**: dailyLogs  
+  * **Document ID**: Document ID: {YYYY-MM-DD}_{storeId} (例: 2025-12-25_store_xxx)
+1日分の操作ログを1つのドキュメント内の配列として保存し、読み取り回数を削減します。
 
 | Field Name | Type | Description |
 | :---- | :---- | :---- |
 | storeId | string | 店舗ID |
-| action | string | 操作内容 (OPEN, CLOSE, INCREMENT, DECREMENT) |
-| resultCount | number | 操作後の待ち人数 |
-| createdAt | timestamp | ログ作成日時 |
-
+| date | string | 日付文字列 (YYYY-MM-DD) |
+| updatedAt | timestamp | ドキュメント更新日時 |
+| logs | array | 操作ログの配列 |
+| └ [].action | string | 操作内容 (OPEN, CLOSE, INCREMENT, DECREMENT) |
+| └ [].resultCount | number | 操作後の待ち人数 |
+| └ [].timestamp | number | タイムスタンプ (ミリ秒) |
 
 ### **3\. Firestore Security Rules**
 
-セキュリティルールは以下のように設定してください。  
+セキュリティルールは最低でも以下のように設定し、必要に応じて適宜強化してください。
 基本的に「ログイン中のメールアドレスの@前の部分」 と 「書き込もうとしているドキュメントID」 が一致する場合のみ書き込みを許可する設定になっています。  
-入力のバリデーションは簡易的に行っていますが、必要に応じて強化してください。
 ```
 rules_version = '2';
 service cloud.firestore {
@@ -109,24 +113,48 @@ service cloud.firestore {
                    && (!('dailyReport' in request.resource.data) || request.resource.data.dailyReport is map);
     }
 
-    // 操作ログ
-    match /logs/{logId} {
-      // ■ Read (読み取り) の制限:
-      // 「ログインしている」かつ
-      // 「読み取ろうとしているデータの storeId が、自分の認証メアドの店舗IDと一致する」場合のみ許可 
-      allow read: if request.auth != null
-                  && resource.data.storeId + "@pharmacy.local" == request.auth.token.email;
-      // ■ Create (作成) の制限:
-      // 「ログインしている」かつ
-      // 「書き込もうとしているデータの storeId が、自分の認証メアドの店舗IDと一致する」場合のみ許可
-      allow create: if request.auth != null
-                    && request.resource.data.storeId + "@pharmacy.local" == request.auth.token.email
-                    // 許可されたアクションのみ
-                    && request.resource.data.action in ["OPEN", "CLOSE", "INCREMENT", "DECREMENT"]
-                    // サーバー時刻のみ
-                    && request.resource.data.createdAt == request.time;
-      // ■ 更新・削除: 改ざん防止のため禁止
-      allow update, delete: if false;
+    // 日次ログ (Daily Bucketing)
+    match /dailyLogs/{logId} {
+      
+      // ヘルパー関数1: ログインユーザーがその店舗のオーナーか確認
+      function isStoreOwner(storeId) {
+        return request.auth != null 
+               && storeId + "@pharmacy.local" == request.auth.token.email;
+      }
+      // ヘルパー関数2:  スキーマ(型)検証
+      // 最低限データの「形」が壊れていないかはここで検証。
+      function isValidSchema(data) {
+        return data.storeId is string
+               && data.date is string
+               && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$') // YYYY-MM-DD形式チェック
+               && data.logs is list                           // 配列であること
+               && data.updatedAt is timestamp;                // タイムスタンプであること
+      }
+
+      // ■ Read (読み取り)
+      // 自分の店舗のデータならOK
+      allow read: if isStoreOwner(resource.data.storeId);
+
+      // ■ Create (新規作成: その日の最初のログ)
+      allow create: if isStoreOwner(request.resource.data.storeId)
+                    // 型チェック
+                    && isValidSchema(request.resource.data)
+                    // 作成時はサーバー時間であること
+                    && request.resource.data.updatedAt == request.time;
+
+      // ■ Update (追記: 2件目以降のログ追加)
+      allow update: if isStoreOwner(resource.data.storeId)
+                    // 型チェック
+                    && isValidSchema(request.resource.data)
+                    // 改ざん防止
+                    && request.resource.data.storeId == resource.data.storeId
+                    && request.resource.data.date == resource.data.date
+                    // 削除防止 (サイズが増えていること)
+                    && request.resource.data.logs.size() > resource.data.logs.size()
+                    && request.resource.data.updatedAt == request.time;
+      
+      // ■ Delete (削除): 禁止
+      allow delete: if false;
     }
   }
 }

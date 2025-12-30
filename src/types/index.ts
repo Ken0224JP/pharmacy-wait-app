@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 
-// 新規: 集計結果の型定義
+// 集計結果の型定義
 export interface DailyStats {
   totalVisitors: number;
   resolvedCount: number;
@@ -28,4 +28,17 @@ export interface StoreData {
 
 export interface Store extends StoreData {
   id: string;
+}
+
+export interface LogEntry {
+  action: string;
+  resultCount: number;
+  timestamp: number; // 配列内で扱いやすいようミリ秒(number)で保存
+}
+
+export interface DailyLogDocument {
+  storeId: string;
+  date: string; // "YYYY-MM-DD"
+  logs: LogEntry[];
+  updatedAt: Timestamp;
 }
