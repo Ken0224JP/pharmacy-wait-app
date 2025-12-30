@@ -8,8 +8,6 @@
 
 このアプリは、Next.js と Firebase を使用して構築されています。  
 リアルタイムデータベース（Firestore）を利用しているため、薬局側での操作は即座にユーザー画面に反映されます。  
-また、ログの保存には 「日次バケット（Daily Bucketing）」 方式を採用しており、集計に関してもキャッシュを実装しており、  
-Firestoreの読み書きコストを最小限に抑えつつ、効率的なデータ管理を目指しています。  
 
 ### **主な機能**
 
@@ -76,7 +74,7 @@ Firestoreの読み書きコストを最小限に抑えつつ、効率的なデ�
 
 #### dailyLogs Collection (日次バケット)
   * **Collection**: dailyLogs  
-  * **Document ID**: Document ID: {YYYY-MM-DD}_{storeId} (例: 2025-12-25_store_xxx)
+  * **Document ID**: Document ID: {YYYY-MM-DD}_{storeId} (例: 2025-12-25_store_xxx)  
 1日分の操作ログを1つのドキュメント内の配列として保存し、読み取り回数を削減します。
 
 | Field Name | Type | Description |
@@ -93,7 +91,7 @@ Firestoreの読み書きコストを最小限に抑えつつ、効率的なデ�
 
 セキュリティルールは最低でも以下のように設定し、必要に応じて適宜強化してください。  
 基本的に「ログイン中のメールアドレスの@前の部分」 と 「書き込もうとしているドキュメントID」 が一致する場合のみ書き込みを許可する設定になっています。  
-```
+```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
