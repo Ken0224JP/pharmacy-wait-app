@@ -2,7 +2,7 @@
 
 近隣薬局の混雑状況や待ち時間をリアルタイムで可視化・管理するためのWebアプリケーションです。  
 患者様（ユーザー）はスマホ等から各薬局の待ち状況を確認でき、薬局側（管理者）はタブレット等で簡単に状況を更新できます。  
-店舗側の操作ログ（開店・閉店、人数の増減）は Firebase Firestore に記録され、管理画面で過去の営業実績として参照可能です。
+また、簡易的な直近の営業日の平均待ち時間や来局状況の集計の表示機能もあります。
 
 ## **概要**
 
@@ -58,6 +58,7 @@
 ### **2\. Firestore Data Model**
 
 #### stores Collection
+公開用の店舗データです。誰でも読み取り可能です。  
   * **Collection**: stores  
   * **Document ID**: {storeId} (例: store\_xxx)
 
@@ -68,14 +69,23 @@
 | waitCount | number | 現在の待ち人数 |
 | updatedAt | timestamp | 最終更新日時 |
 | avgTime | number | 一人当たり待ち時間設定(分) |
-| dailyReport | map | 集計結果のキャッシュ |
-| └ calculatedAt | timestamp | キャッシュ作成日時 |
-| └ data | map | 集計データオブジェクト (平均待ち時間, 人数など) |
 
-#### dailyLogs Collection (日次バケット)
+#### storeReports Collection
+管理者のみがアクセス可能な集計データです。一般ユーザーからは読み取れません。  
   * **Collection**: dailyLogs  
   * **Document ID**: Document ID: {YYYY-MM-DD}_{storeId} (例: 2025-12-25_store_xxx)  
-1日分の操作ログを1つのドキュメント内の配列として保存し、読み取り回数を削減します。
+
+| Field Name | Type | Description |
+| :---- | :---- | :---- |
+| storeId | string | 店舗ID |
+| calculatedAt | timestamp | キャッシュ作成日時 |
+| data | map | 集計データオブジェクト (平均待ち時間, 総来客数など) |
+
+#### dailyLogs Collection
+操作ログを保存します。一般ユーザーからは読み取れないのはもちろん、管理者も削除は不可としています。  
+  * **Collection**: dailyLogs  
+  * **Document ID**: Document ID: {YYYY-MM-DD}_{storeId} (例: 2025-12-25_store_xxx)  
+1日分の操作ログを1つのドキュメント内の配列として保存(日次バケット)し、読み取り回数を削減します。
 
 | Field Name | Type | Description |
 | :---- | :---- | :---- |
@@ -96,62 +106,89 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 店舗データ
-    match /stores/{storeId} {
-      // ■ 読み取りは誰でもOK
-      allow read: if true;
-      // 書き込みは、「ログインしている」 かつ
-      // 「ログインユーザーのメアドが、店舗ID + @pharmacy.local と一致する場合」のみ許可
-      allow update: if request.auth != null
-                   && request.auth.token.email == storeId + "@pharmacy.local"
-                   // 簡易バリデーション
-                   && (!('waitCount' in request.resource.data) || request.resource.data.waitCount is int)
-                   && (!('avgTime' in request.resource.data) || request.resource.data.avgTime is number)
-                   && (!('isOpen' in request.resource.data) || request.resource.data.isOpen is bool)
-                   && (!('dailyReport' in request.resource.data) || request.resource.data.dailyReport is map);
+    // =========================================================
+    // 共通関数
+    // =========================================================
+
+    // 店舗オーナーかどうか判定
+    function isStoreOwner(storeId) {
+      return request.auth != null 
+          && request.auth.token.email == storeId + "@pharmacy.local";
     }
 
-    // 日次ログ (Daily Bucketing)
-    match /dailyLogs/{logId} {
+    // =========================================================
+    // 1. 店舗データ (stores)
+    // =========================================================
+    match /stores/{storeId} {
+      // 誰でも読み取りOK (表示用)
+      allow read: if true;
+
+      // 更新: オーナーのみ
+      allow update: if isStoreOwner(storeId)
+                    // 型チェック
+                    && (!('waitCount' in request.resource.data) || request.resource.data.waitCount is int)
+                    && (!('avgTime' in request.resource.data) || request.resource.data.avgTime is number)
+                    && (!('isOpen' in request.resource.data) || request.resource.data.isOpen is bool)
+                    
+                    // ★重要: dailyReport フィールドが含まれていたら拒否 (誤送信防止)
+                    && !('dailyReport' in request.resource.data);
+    }
+
+    // =========================================================
+    // 2. 集計レポート (storeReports)
+    // =========================================================
+    match /storeReports/{storeId} {
       
-      // ヘルパー関数1: ログインユーザーがその店舗のオーナーか確認
-      function isStoreOwner(storeId) {
-        return request.auth != null 
-               && storeId + "@pharmacy.local" == request.auth.token.email;
-      }
-      // ヘルパー関数2:  スキーマ(型)検証
-      // 最低限データの「形」が壊れていないかはここで検証。
-      function isValidSchema(data) {
+      // レポートのデータ構造チェック
+      function isValidReportSchema(data) {
         return data.storeId is string
-               && data.date is string
-               && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$') // YYYY-MM-DD形式チェック
-               && data.logs is list                           // 配列であること
-               && data.updatedAt is timestamp;                // タイムスタンプであること
+            && data.storeId == storeId // ID不一致防止
+            && data.calculatedAt is timestamp
+            && data.data is map;       // 集計データ本体
       }
 
-      // ■ Read (読み取り)
-      // 自分の店舗のデータならOK
+      // 読み書きともに「オーナーのみ」に制限
+      // これで一般ユーザーからは一切見えなくなります
+      allow read: if isStoreOwner(storeId);
+      
+      // 書き込み (作成・更新)
+      allow write: if isStoreOwner(storeId)
+                   && isValidReportSchema(request.resource.data);
+    }
+
+    // =========================================================
+    // 3. 日次ログ (dailyLogs)
+    // =========================================================
+    match /dailyLogs/{logId} {
+
+      // ログのデータ構造チェック
+      function isValidLogSchema(data) {
+        return data.storeId is string
+            && data.date is string
+            && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$') // YYYY-MM-DD
+            && data.logs is list
+            && data.updatedAt is timestamp;
+      }
+
+      // Read
       allow read: if isStoreOwner(resource.data.storeId);
 
-      // ■ Create (新規作成: その日の最初のログ)
+      // Create
       allow create: if isStoreOwner(request.resource.data.storeId)
-                    // 型チェック
-                    && isValidSchema(request.resource.data)
-                    // 作成時はサーバー時間であること
+                    && isValidLogSchema(request.resource.data)
                     && request.resource.data.updatedAt == request.time;
 
-      // ■ Update (追記: 2件目以降のログ追加)
+      // Update
       allow update: if isStoreOwner(resource.data.storeId)
-                    // 型チェック
-                    && isValidSchema(request.resource.data)
+                    && isValidLogSchema(request.resource.data)
                     // 改ざん防止
                     && request.resource.data.storeId == resource.data.storeId
                     && request.resource.data.date == resource.data.date
-                    // 削除防止 (サイズが増えていること)
+                    // 削除防止 (ログ配列のサイズが増えていること)
                     && request.resource.data.logs.size() > resource.data.logs.size()
                     && request.resource.data.updatedAt == request.time;
       
-      // ■ Delete (削除): 禁止
+      // Delete (禁止)
       allow delete: if false;
     }
   }
