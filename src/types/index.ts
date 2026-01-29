@@ -6,7 +6,6 @@ export interface DailyStats {
   totalVisitors: number;
   avgWaitTime: number;
   maxWaitCount: number;
-  // 以下、個別に定義
   date: string;       // "2023/12/25"
   openTime: string;   // "09:00"
   closeTime: string;  // "18:00"
@@ -25,12 +24,6 @@ export interface StoreData {
 export interface Store extends StoreData {
   id: string;
 }
-
-export type StoreReportDocument = {
-  storeId: string;
-  calculatedAt: Timestamp;
-  data: DailyStats; 
-};
 
 export interface LogEntry {
   action: LogAction;
