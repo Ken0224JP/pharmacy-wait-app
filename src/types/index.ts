@@ -4,7 +4,6 @@ import type { LogAction } from "@/lib/constants";
 // 集計結果の型定義
 export interface DailyStats {
   totalVisitors: number;
-  resolvedCount: number;
   avgWaitTime: number;
   maxWaitCount: number;
   // 以下、個別に定義

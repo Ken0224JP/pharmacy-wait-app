@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { COLOR_CONFIG, RATIO_THRESHOLD_LOW, RATIO_THRESHOLD_MEDIUM } from "@/lib/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClock, faUsers } from "@fortawesome/free-solid-svg-icons";
-import { getOrUpdateDailyStats } from "@/lib/api/report";
+import { getLatestReport } from "@/lib/api/report";
 import { DailyStats, Store } from "@/types";
 
 interface ReportPanelProps {
@@ -23,7 +23,7 @@ export default function ReportPanel({ store }: ReportPanelProps) {
       try {
         setLoading(true);
         setError(false);
-        const data = await getOrUpdateDailyStats(store);
+        const data = await getLatestReport(store);
         setReport(data);
       } catch (err) {
         console.error("Report Fetch Error:", err);

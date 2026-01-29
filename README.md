@@ -70,17 +70,6 @@
 | updatedAt | timestamp | 最終更新日時 |
 | avgTime | number | 一人当たり待ち時間設定(分) |
 
-#### storeReports Collection
-管理者のみがアクセス可能な集計データです。一般ユーザーからは読み取れません。  
-  * **Collection**: dailyLogs  
-  * **Document ID**: Document ID: {YYYY-MM-DD}_{storeId} (例: 2025-12-25_store_xxx)  
-
-| Field Name | Type | Description |
-| :---- | :---- | :---- |
-| storeId | string | 店舗ID |
-| calculatedAt | timestamp | キャッシュ作成日時 |
-| data | map | 集計データオブジェクト (平均待ち時間, 総来客数など) |
-
 #### dailyLogs Collection
 操作ログを保存します。一般ユーザーからは読み取れないのはもちろん、管理者も削除は不可としています。  
   * **Collection**: dailyLogs  
@@ -132,29 +121,7 @@ service cloud.firestore {
     }
 
     // =========================================================
-    // 2. 集計レポート (storeReports)
-    // =========================================================
-    match /storeReports/{storeId} {
-      
-      // レポートのデータ構造チェック
-      function isValidReportSchema(data) {
-        return data.storeId is string
-            && data.storeId == storeId // ID不一致防止
-            && data.calculatedAt is timestamp
-            && data.data is map;       // 集計データ本体
-      }
-
-      // 読み書きともに「オーナーのみ」に制限
-      // これで一般ユーザーからは一切見えなくなります
-      allow read: if isStoreOwner(storeId);
-      
-      // 書き込み (作成・更新)
-      allow write: if isStoreOwner(storeId)
-                   && isValidReportSchema(request.resource.data);
-    }
-
-    // =========================================================
-    // 3. 日次ログ (dailyLogs)
+    // 2. 日次ログ (dailyLogs)
     // =========================================================
     match /dailyLogs/{logId} {
 

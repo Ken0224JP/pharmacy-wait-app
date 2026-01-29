@@ -10,8 +10,6 @@ export interface ThemeColor {
 export const FIRESTORE_COLLECTION_STORES = "stores";
 /** ログ（日次アクション）コレクション */
 export const FIRESTORE_COLLECTION_LOGS = "dailyLogs";
-/** 店舗別レポート（集計結果）コレクション */
-export const FIRESTORE_COLLECTION_REPORTS = "storeReports";
 
 /** 認証用メールアドレスのサフィックス */
 export const AUTH_DOMAIN_SUFFIX = "@pharmacy.local";
