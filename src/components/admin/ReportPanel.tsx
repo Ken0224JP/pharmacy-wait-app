@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { COLOR_CONFIG, RATIO_THRESHOLD_LOW, RATIO_THRESHOLD_MEDIUM } from "@/lib/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClock, faUsers } from "@fortawesome/free-solid-svg-icons";
+import { faClock, faUsers, faSquarePollVertical } from "@fortawesome/free-solid-svg-icons";
 import { getLatestReport } from "@/lib/api/report";
 import { DailyStats, Store } from "@/types";
+import CongestionGraph from "./CongestionGraph";
 
 interface ReportPanelProps {
   store: Store | null;
@@ -131,7 +132,7 @@ export default function ReportPanel({ store }: ReportPanelProps) {
             </div>
           </div>
 
-          <div className="text-center bg-gray-50 rounded-lg py-3 mb-2">
+          <div className="text-center bg-gray-100 rounded-lg py-3 mb-2">
             <p className="text-sm font-bold text-gray-600">
               営業時間：{report.duration} 
               {report.openTime && report.closeTime && (
@@ -141,6 +142,17 @@ export default function ReportPanel({ store }: ReportPanelProps) {
               )}
             </p>
           </div>
+
+          {report.graphData && report.graphData.length > 0 && (
+            <div className="pt-3">
+              <div className="text-gray-500 px-2 flex items-center justify-center gap-2">
+                <FontAwesomeIcon icon={faSquarePollVertical} className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium">時間帯別 混雑状況</span>
+              </div>
+              <CongestionGraph data={report.graphData} />
+            </div>
+          )}
+
         </div>
       )}
     </div>

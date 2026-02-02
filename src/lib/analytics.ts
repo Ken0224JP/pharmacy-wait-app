@@ -1,16 +1,21 @@
-import { DailyStats } from "@/types";
+import { DailyStats, GraphPoint } from "@/types";
 import { formatTime } from "@/lib/utils";
 
+// ★定数定義
+const GRAPH_INTERVAL = 30; // 分単位
+
 export const calculateDailyStats = (logs: any[]): DailyStats => {
-  let totalArea = 0;      // (待ち人数 × 継続時間) の総和
-  let totalVisitors = 0;  // 総来客数
+  let totalArea = 0;      
+  let totalVisitors = 0;  
   let prevTime = 0;
   let prevCount = 0;
   let maxWaitCount = 0;
   let lastOpenTime: number | null = null;
   let lastCloseTime: number | null = null;
+  
+  // ★グラフ用データ配列
+  const graphData: GraphPoint[] = [];
 
-  // デフォルト値
   const emptyResult: DailyStats = {
     totalVisitors: 0,
     avgWaitTime: 0,
@@ -19,15 +24,23 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
     openTime: "",
     closeTime: "",
     duration: "データなし",
+    graphData: [],
   };
 
   if (!logs || logs.length === 0) return emptyResult;
 
-  for (const log of logs) {
+  // 時系列順に確実にソート
+  const sortedLogs = [...logs].sort((a, b) => {
+    const tA = new Date(a.timestamp).getTime();
+    const tB = new Date(b.timestamp).getTime();
+    return tA - tB;
+  });
+
+  // 統計計算ループ
+  for (const log of sortedLogs) {
     const timestamp = new Date(log.timestamp).getTime();
     const currentCount = Number(log.resultCount);
 
-    // 1. 面積の加算（前の状態の人数 × 次のイベントまでの経過時間）
     if (prevTime > 0) {
       const durationMinutes = (timestamp - prevTime) / (1000 * 60);
       if (durationMinutes > 0) {
@@ -35,12 +48,7 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
       }
     }
 
-    // 2. 来客数のカウント（INCREMENTアクションをカウント）
-    if (log.action === "INCREMENT") {
-      totalVisitors++;
-    }
-
-    // 3. 各種状態の記録
+    if (log.action === "INCREMENT") totalVisitors++;
     if (log.action === "OPEN" && !lastOpenTime) lastOpenTime = timestamp;
     if (log.action === "CLOSE") lastCloseTime = timestamp;
     if (currentCount > maxWaitCount) maxWaitCount = currentCount;
@@ -49,10 +57,65 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
     prevCount = currentCount;
   }
 
-  // 平均待ち時間 = 総滞在面積 / 総来客数
-  const avgWaitTime = totalVisitors > 0 ? Math.round(totalArea / totalVisitors) : 0;
+  // ★グラフデータの生成ロジック (新規追加)
+  if (lastOpenTime) {
+    // 開始時刻を15分単位に切り捨て (例: 09:12 -> 09:00)
+    let currentBucketTime = new Date(lastOpenTime);
+    currentBucketTime.setMinutes(Math.floor(currentBucketTime.getMinutes() / GRAPH_INTERVAL) * GRAPH_INTERVAL);
+    currentBucketTime.setSeconds(0);
+    currentBucketTime.setMilliseconds(0);
+    
+    // 終了時刻（閉店または現在の最終ログ時刻）
+    const endTime = lastCloseTime || prevTime;
+
+    let logIndex = 0;
+    let currentSimulatedCount = 0; // シミュレーション上の現在人数
+
+    // 終了時刻を超えるまで 15分ずつループ
+    while (currentBucketTime.getTime() <= endTime) {
+      const nextBucketTime = currentBucketTime.getTime() + (GRAPH_INTERVAL * 60 * 1000);
+      
+      let maxInBucket = currentSimulatedCount; // 区間開始時の人数で初期化
+      let visitorsInBucket = 0;                // 区間内の新規人数
+
+      // 次の区間時刻になるまでのログを全て処理
+      while (logIndex < sortedLogs.length) {
+        const log = sortedLogs[logIndex];
+        const logTime = new Date(log.timestamp).getTime();
+        
+        // ログの時刻が次の区間より前なら、この区間の出来事として処理
+        if (logTime < nextBucketTime) {
+          if (log.action === "INCREMENT") {
+            visitorsInBucket++;
+          }
+          
+          currentSimulatedCount = Number(log.resultCount);
+          
+          // 区間内の最大待ち人数を更新
+          if (currentSimulatedCount > maxInBucket) {
+            maxInBucket = currentSimulatedCount;
+          }
+          logIndex++;
+        } else {
+          // 次の区間に入ったのでループを抜ける
+          break;
+        }
+      }
+
+      graphData.push({
+        time: formatTime(currentBucketTime),
+        maxWait: maxInBucket,
+        newVisitors: visitorsInBucket
+      });
+
+      // 次の枠へ進める
+      currentBucketTime.setTime(nextBucketTime);
+    }
+  }
 
   // 結果の整形
+  const avgWaitTime = totalVisitors > 0 ? Math.round(totalArea / totalVisitors) : 0;
+  
   let dateStr = "";
   let openTimeStr = "";
   let closeTimeStr = "";
@@ -62,11 +125,9 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
     const openDateObj = new Date(lastOpenTime);
     dateStr = `${openDateObj.getFullYear()}/${(openDateObj.getMonth() + 1).toString().padStart(2, '0')}/${openDateObj.getDate().toString().padStart(2, '0')}`;
     openTimeStr = formatTime(openDateObj);
-    
-    const endTime = lastCloseTime || prevTime; // CLOSEがない場合は最後のログ時刻
-    closeTimeStr = formatTime(new Date(endTime));
-
-    const durationMinutes = Math.floor((endTime - lastOpenTime) / (1000 * 60));
+    const endT = lastCloseTime || prevTime;
+    closeTimeStr = formatTime(new Date(endT));
+    const durationMinutes = Math.floor((endT - lastOpenTime) / (1000 * 60));
     durationStr = `${Math.floor(durationMinutes / 60)}時間${durationMinutes % 60}分`;
   }
 
@@ -78,5 +139,6 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
     openTime: openTimeStr,
     closeTime: closeTimeStr,
     duration: durationStr,
+    graphData,
   };
 };

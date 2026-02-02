@@ -1,6 +1,13 @@
 import { Timestamp } from "firebase/firestore";
 import type { LogAction } from "@/lib/constants";
 
+// 集計グラフのデータポイント
+export interface GraphPoint {
+  time: string;        // "09:00", "09:15" 等
+  maxWait: number;     // その区間の最大同時待ち人数（折れ線）
+  newVisitors: number; // その区間の新規受付人数（棒グラフ）
+}
+
 // 集計結果の型定義
 export interface DailyStats {
   totalVisitors: number;
@@ -10,6 +17,7 @@ export interface DailyStats {
   openTime: string;   // "09:00"
   closeTime: string;  // "18:00"
   duration: string;   // "9時間0分"
+  graphData: GraphPoint[];
 }
 
 // Firestoreに保存されているデータの型
