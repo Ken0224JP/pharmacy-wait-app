@@ -67,17 +67,18 @@ export const usePharmacyStore = (storeId: string | null) => {
     }
   };
 
-  const updateAvgTime = async (newTime: number) => {
+  const updateSettings = async (settings: { avgTime: number; thresholdLow: number; thresholdMedium: number }) => {
     if (!storeData || !storeId) return;
-    // 1分未満などの無効な値は無視
-    if (newTime < 1) return;
+    
+    // バリデーション
+    if (settings.avgTime < 1 || settings.thresholdLow < 0 || settings.thresholdMedium < 0) return;
 
     try {
-      await storeApi.updateStoreAvgTime(storeId, newTime);
+      await storeApi.updateStoreSettings(storeId, settings);
     } catch (err) {
-      console.error("Failed to update average time:", err);
+      console.error("Failed to update settings:", err);
     }
   };
 
-  return { storeData, loading, toggleOpen, updateCount, updateAvgTime };
+  return { storeData, loading, toggleOpen, updateCount, updateSettings };
 };

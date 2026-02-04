@@ -26,6 +26,8 @@ export interface StoreData {
   isOpen: boolean;
   waitCount: number;
   avgTime: number;
+  thresholdLow?: number;
+  thresholdMedium?: number;
   updatedAt: Timestamp | null;
 }
 

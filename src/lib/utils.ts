@@ -1,5 +1,5 @@
 import { Timestamp } from "firebase/firestore";
-import { COLOR_CONFIG, ThemeColor, DEFAULT_AVG_WAIT_MINUTES, THRESHOLD_LOW, THRESHOLD_MEDIUM } from "@/lib/constants";
+import { COLOR_CONFIG, ThemeColor, DEFAULT_AVG_WAIT_MINUTES, DEFAULT_THRESHOLD_LOW, DEFAULT_THRESHOLD_MEDIUM } from "@/lib/constants";
 /**
  * タイムスタンプを "HH:MM" 形式の文字列に変換
  */
@@ -27,11 +27,17 @@ export const formatDateTime = (timestamp: Timestamp | null) => {
 
 /**
  * 店舗の状態と待ち人数に応じてカラー設定を取得
+ * 店舗個別の閾値設定があればそれを使い、なければデフォルト定数を使う
  */
-export const getStoreTheme = (isOpen: boolean, waitCount: number): ThemeColor => {
+export const getStoreTheme = (
+  isOpen: boolean, 
+  waitCount: number,
+  low: number = DEFAULT_THRESHOLD_LOW,
+  medium: number = DEFAULT_THRESHOLD_MEDIUM
+): ThemeColor => {
   if (!isOpen) return COLOR_CONFIG.closed;
-  if (waitCount <= THRESHOLD_LOW) return COLOR_CONFIG.low;
-  if (waitCount <= THRESHOLD_MEDIUM) return COLOR_CONFIG.medium;
+  if (waitCount <= low) return COLOR_CONFIG.low;
+  if (waitCount <= medium) return COLOR_CONFIG.medium;
   return COLOR_CONFIG.high;
 };
 

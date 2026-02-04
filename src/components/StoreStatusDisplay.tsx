@@ -43,7 +43,12 @@ interface StoreStatusDisplayProps {
 
 export default function StoreStatusDisplay({ store, variant, className = "" }: StoreStatusDisplayProps) {
   const styles = VARIANTS[variant];
-  const theme = getStoreTheme(store.isOpen, store.waitCount);
+  const theme = getStoreTheme(
+    store.isOpen, 
+    store.waitCount,
+    store.thresholdLow,
+    store.thresholdMedium
+  );
   const waitTime = calculateWaitTime(store.waitCount, store.avgTime);
 
   return (

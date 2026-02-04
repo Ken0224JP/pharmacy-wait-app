@@ -12,7 +12,12 @@ interface StatusPanelProps {
 }
 
 export default function StatusPanel({ storeData, updateCount, onOpenSettings }: StatusPanelProps) {
-  const theme = getStoreTheme(storeData.isOpen, storeData.waitCount);
+  const theme = getStoreTheme(
+    storeData.isOpen, 
+    storeData.waitCount,
+    storeData.thresholdLow,
+    storeData.thresholdMedium
+  );
   const waitTime = calculateWaitTime(storeData.waitCount, storeData.avgTime);
 
   return (
@@ -54,7 +59,7 @@ export default function StatusPanel({ storeData, updateCount, onOpenSettings }: 
           <button 
             onClick={onOpenSettings}
             className="text-gray-400 hover:text-gray-600 transition-colors p-2"
-            title="計算設定を変更"
+            title="設定を変更"
           >
             <FontAwesomeIcon icon={faCog} />
           </button>

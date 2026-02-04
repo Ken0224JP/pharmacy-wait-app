@@ -73,10 +73,13 @@ export const updateStoreWaitCount = async (storeId: string, isIncrement: boolean
   });
 };
 
-// 平均待ち時間の更新
-export const updateStoreAvgTime = async (storeId: string, newTime: number) => {
+// 平均待ち時間と閾値の設定を更新
+export const updateStoreSettings = async (
+  storeId: string, 
+  settings: { avgTime: number; thresholdLow: number; thresholdMedium: number }
+) => {
   await updateDoc(doc(db, FIRESTORE_COLLECTION_STORES, storeId), {
-    avgTime: newTime,
+    ...settings,
     updatedAt: serverTimestamp()
   });
 };

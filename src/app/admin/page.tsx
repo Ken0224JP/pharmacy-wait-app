@@ -22,7 +22,7 @@ function AdminContent() {
   const [authLoading, setAuthLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const { storeData, loading: dataLoading, toggleOpen, updateCount, updateAvgTime } = usePharmacyStore(targetStoreId);
+  const { storeData, loading: dataLoading, toggleOpen, updateCount, updateSettings } = usePharmacyStore(targetStoreId);
 
   useWakeLock(storeData?.isOpen || false);
 
@@ -71,7 +71,13 @@ function AdminContent() {
   if (dataLoading) return <div className="p-10 text-center">店舗データ読み込み中...</div>;
   if (!storeData) return <div className="p-10 text-center">店舗データが見つかりません (ID: {targetStoreId})</div>;
 
-  const theme = getStoreTheme(storeData.isOpen, storeData.waitCount);
+  // storeDataから閾値を渡す
+  const theme = getStoreTheme(
+    storeData.isOpen, 
+    storeData.waitCount, 
+    storeData.thresholdLow, 
+    storeData.thresholdMedium
+  );
 
   return (
     <div className="min-h-screen bg-gray-200 relative">
@@ -121,7 +127,9 @@ function AdminContent() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         currentAvgTime={storeData.avgTime}
-        onSave={updateAvgTime}
+        currentThresholdLow={storeData.thresholdLow}
+        currentThresholdMedium={storeData.thresholdMedium}
+        onSave={updateSettings}
       />
     </div>
   );

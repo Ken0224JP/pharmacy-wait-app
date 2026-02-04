@@ -27,13 +27,14 @@ export const COLOR_CONFIG: Record<string, ThemeColor> = {
   high: { headerBg: "#940E10", headerText: "#ffffff", accentColor: "#940E10" }
 };
 /**
- * 混雑度の閾値設定
- * - waitCount <= THRESHOLD_LOW  -> low (青)
- * - waitCount <= THRESHOLD_MED  -> medium (黄)
- * - それ以上                      -> high (赤)
+ * 混雑度の閾値設定（デフォルト）
+ * 店舗ごとの設定がない場合に使用されます
+ * - waitCount <= DEFAULT_THRESHOLD_LOW  -> low (青)
+ * - waitCount <= DEFAULT_THRESHOLD_MEDIUM  -> medium (黄)
+ * - それ以上                               -> high (赤)
  */
-export const THRESHOLD_LOW = 2;
-export const THRESHOLD_MEDIUM = 5;
+export const DEFAULT_THRESHOLD_LOW = 2;
+export const DEFAULT_THRESHOLD_MEDIUM = 5;
 /**
  * レポート表示時の色判定基準（設定時間に対する実績時間の比率）
  * - 実績 ÷ 設定 <= RATIO_THRESHOLD_LOW (1.5倍以内) -> 青
