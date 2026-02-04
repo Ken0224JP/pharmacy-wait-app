@@ -19,7 +19,8 @@
   * 🟢 空き (0-2人)  
   * 🟡 やや混雑 (3-5人)  
   * 🔴 混雑 (6人以上)  
-  * ⚪ 閉店/受付終了
+  * ⚪ 閉店/受付終了  
+  ※上記の人数はデフォルト値です。店舗ごとに個別に変更可能です。  
 
 #### **管理者向け機能 (薬局スタッフ)**
 
@@ -69,6 +70,8 @@
 | waitCount | number | 現在の待ち人数 |
 | updatedAt | timestamp | 最終更新日時 |
 | avgTime | number | 一人当たり待ち時間設定(分) |
+| thresholdLow | number | 混雑状況：低 の上限(人) |
+| thresholdMedium | number | 混雑状況：中 の上限(人) |
 
 #### dailyLogs Collection
 操作ログを保存します。一般ユーザーからは読み取れないのはもちろん、管理者も削除は不可としています。  
@@ -202,36 +205,38 @@ npm run dev
 src/
 ├── app/
 │   ├── admin/
-│   │   └── page.tsx           # 店舗管理画面 (認証・状態管理・WakeLock制御)
+│   │   └── page.tsx            # 店舗管理画面 (認証・状態管理・WakeLock制御)
 │   ├── view/
-│   │   └── page.tsx           # 患者向け表示画面 (個別店舗の待ち状況表示)
-│   ├── globals.css            # グローバルスタイル (Tailwind CSS)
-│   ├── layout.tsx             # アプリケーション全体のレイアウト
-│   └── page.tsx               # トップページ (全店舗の一覧表示)
+│   │   └── page.tsx            # 患者向け表示画面 (個別店舗の待ち状況表示)
+│   ├── globals.css             # グローバルスタイル (Tailwind CSS)
+│   ├── layout.tsx              # アプリケーション全体のレイアウト
+│   └── page.tsx                # トップページ (全店舗の一覧表示)
 │
-├── components/                # UIコンポーネント
+├── components/                 # UIコンポーネント
 │   ├── admin/
-│   │   ├── LoginForm.tsx      # 管理画面：ログインフォーム
-│   │   ├── ReportPanel.tsx    # 管理画面：集計結果表示パネル
-│   │   ├── SettingsModal.tsx  # 管理画面：待ち時間設定モーダル
-│   │   └── StatusPanel.tsx    # 管理画面：待ち人数操作・表示パネル
-│   └── StoreStatusDisplay.tsx # 店舗状況表示コンポーネント
+│   │   ├── LoginForm.tsx       # 管理画面：ログインフォーム
+│   │   ├── Header.tsx          # 管理画面：ヘッダー
+│   │   ├── ReportPanel.tsx     # 管理画面：集計結果表示パネル
+│   │   ├── CongestionGraph.tsx # 管理画面：集計のグラフ部分
+│   │   ├── SettingsModal.tsx   # 管理画面：待ち時間設定モーダル
+│   │   └── StatusPanel.tsx     # 管理画面：待ち人数操作・表示パネル
+│   └── StoreStatusDisplay.tsx  # 店舗状況表示コンポーネント
 │
-├── hooks/                     # カスタムフック (UIロジックの分離)
-│   ├── useAllStores.ts        # 全店舗のリアルタイムデータ取得
-│   ├── usePharmacyStore.ts    # 個別店舗の状態管理
-│   └── useWakeLock.ts         # 画面の常時点灯 (Wake Lock API) の制御
+├── hooks/                      # カスタムフック (UIロジックの分離)
+│   ├── useAllStores.ts         # 全店舗のリアルタイムデータ取得
+│   ├── usePharmacyStore.ts     # 個別店舗の状態管理
+│   └── useWakeLock.ts          # 画面の常時点灯 (Wake Lock API) の制御
 │
-├── lib/                       # ユーティリティ・設定・API
-│   ├── api/                   # 外部通信ロジック
-│   │   ├── logger.ts          # Firestoreへのログ送信
-│   │   ├── report.ts          # レポート取得・キャッシュ管理API
-│   │   └── store.ts           # Firestoreデータベース操作
-│   ├── analytics.ts           # ログ集計ロジック
-│   ├── constants.ts           # 定数定義 (配色設定など)
-│   ├── firebase.ts            # Firebase初期化・設定
-│   └── utils.ts               # 共通ロジック (時間計算・フォーマット・テーマ判定)
+├── lib/                        # ユーティリティ・設定・API
+│   ├── api/                    # 外部通信ロジック
+│   │   ├── logger.ts           # Firestoreへのログ送信
+│   │   ├── report.ts           # レポート取得・キャッシュ管理API
+│   │   └── store.ts            # Firestoreデータベース操作
+│   ├── analytics.ts            # ログ集計ロジック
+│   ├── constants.ts            # 定数定義 (配色設定など)
+│   ├── firebase.ts             # Firebase初期化・設定
+│   └── utils.ts                # 共通ロジック (時間計算・フォーマット・テーマ判定)
 │
-└── types/                     # 型定義
-    └── index.ts               # 共通の型定義 (Store, StoreDataなど)
+└── types/                      # 型定義
+    └── index.ts                # 共通の型定義 (Store, StoreDataなど)
 ```
