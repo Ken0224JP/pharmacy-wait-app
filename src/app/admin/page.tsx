@@ -4,10 +4,10 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { usePharmacyStore } from "@/hooks/usePharmacyStore";
-import { getStoreTheme } from "@/lib/utils";
 import { useWakeLock } from "@/hooks/useWakeLock";
 
 import LoginForm from "@/components/admin/LoginForm";
+import Header from "@/components/admin/Header";
 import StatusPanel from "@/components/admin/StatusPanel";
 import SettingsModal from "@/components/admin/SettingsModal";
 import ReportPanel from "@/components/admin/ReportPanel";
@@ -36,7 +36,7 @@ function AdminContent() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.replace("/admin"); // クエリパラメータを削除してリセット
+    router.replace("/admin");
   };
 
   const handleToggleStatus = async () => {
@@ -55,7 +55,6 @@ function AdminContent() {
     return <LoginForm />;
   }
 
-  // user.email が null の場合のガードも念のため
   const loggedInStoreId = user.email ? user.email.split("@")[0] : "";
   if (loggedInStoreId !== targetStoreId) {
     return (
@@ -71,50 +70,22 @@ function AdminContent() {
   if (dataLoading) return <div className="p-10 text-center">店舗データ読み込み中...</div>;
   if (!storeData) return <div className="p-10 text-center">店舗データが見つかりません (ID: {targetStoreId})</div>;
 
-  // storeDataから閾値を渡す
-  const theme = getStoreTheme(
-    storeData.isOpen, 
-    storeData.waitCount, 
-    storeData.thresholdLow, 
-    storeData.thresholdMedium
-  );
-
   return (
     <div className="min-h-screen bg-gray-200 relative">
-      <header className="bg-white shadow px-4 py-3 flex justify-between items-center sticky top-0 z-40">
-        <div className="font-bold text-gray-800 text-sm md:text-base w-1/3 truncate">
-          {storeData.name}
-        </div>
-        <div className="w-1/3 flex justify-center">
-          <button 
-            onClick={handleToggleStatus}
-            className={`
-              px-6 py-2 rounded-full font-bold shadow-sm transition-all border text-sm md:text-base whitespace-nowrap
-              ${!storeData.isOpen 
-                ? "bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200" 
-                : "hover:opacity-90 border-transparent"}
-            `}
-            style={storeData.isOpen ? {
-              backgroundColor: theme.headerBg,
-              color: theme.headerText,
-            } : {}}
-          >
-            {storeData.isOpen ? "営業中" : "閉店中"}
-          </button>
-        </div>
-        <div className="w-1/3 flex justify-end">
-          <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-red-500 underline">
-            ログアウト
-          </button>
-        </div>
-      </header>
+      {/* Headerコンポーネントを使用 */}
+      <Header 
+        storeData={storeData}
+        onToggleStatus={handleToggleStatus}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onLogout={handleLogout}
+      />
 
       <main className="max-w-md mx-auto p-6 mt-6 space-y-8 ">
         {storeData.isOpen ? (
           <StatusPanel 
             storeData={storeData} 
-            updateCount={updateCount} 
-            onOpenSettings={() => setIsSettingsOpen(true)}
+            updateCount={updateCount}
+            // onOpenSettings はHeaderに移ったため削除
           />
         ) : (
           <ReportPanel 

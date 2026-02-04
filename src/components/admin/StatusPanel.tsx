@@ -1,17 +1,14 @@
 "use client";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCog } from "@fortawesome/free-solid-svg-icons";
 import { getStoreTheme, calculateWaitTime } from "@/lib/utils";
 import { StoreData } from "@/types";
 
 interface StatusPanelProps {
   storeData: StoreData;
   updateCount: (isIncrement: boolean) => void;
-  onOpenSettings: () => void;
 }
 
-export default function StatusPanel({ storeData, updateCount, onOpenSettings }: StatusPanelProps) {
+export default function StatusPanel({ storeData, updateCount }: StatusPanelProps) {
   const theme = getStoreTheme(
     storeData.isOpen, 
     storeData.waitCount,
@@ -56,13 +53,6 @@ export default function StatusPanel({ storeData, updateCount, onOpenSettings }: 
           <p className="text-xl font-bold text-gray-600">
             目安待ち時間: <span>{waitTime}</span> 分
           </p>
-          <button 
-            onClick={onOpenSettings}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-2"
-            title="設定を変更"
-          >
-            <FontAwesomeIcon icon={faCog} />
-          </button>
         </div>
       </div>
     </section>
