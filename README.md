@@ -20,7 +20,7 @@
   * 🟡 やや混雑 (3-5人)  
   * 🔴 混雑 (6人以上)  
   * ⚪ 閉店/受付終了  
-  ※上記の人数はデフォルト値です。店舗ごとに個別に変更可能です。  
+※上記の人数はデフォルト値です。店舗ごとに個別に変更可能です。  
 
 #### **管理者向け機能 (薬局スタッフ)**
 
@@ -69,9 +69,9 @@
 | isOpen | boolean | 営業中フラグ (true: 営業中, false: 受付終了) |
 | waitCount | number | 現在の待ち人数 |
 | updatedAt | timestamp | 最終更新日時 |
-| avgTime | number | 一人当たり待ち時間設定(分) |
-| thresholdLow | number | 混雑状況：低 の上限(人) |
-| thresholdMedium | number | 混雑状況：中 の上限(人) |
+| avgTime | number | 店舗設定：一人当たり待ち時間(分) |
+| thresholdLow | number | 店舗設定：混雑状況 低 の上限(人) |
+| thresholdMedium | number | 店舗設定：混雑状況 中 の上限(人) |
 
 #### dailyLogs Collection
 操作ログを保存します。一般ユーザーからは読み取れないのはもちろん、管理者も削除は不可としています。  
