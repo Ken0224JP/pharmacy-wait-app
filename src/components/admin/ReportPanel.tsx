@@ -147,7 +147,7 @@ export default function ReportPanel({ store }: ReportPanelProps) {
             <div className="pt-3">
               <div className="text-gray-500 px-2 flex items-center justify-center gap-2">
                 <FontAwesomeIcon icon={faSquarePollVertical} className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-medium">時間帯別 混雑状況</span>
+                <span className="text-sm font-medium">時間帯別混雑状況</span>
               </div>
               <CongestionGraph data={report.graphData} />
             </div>

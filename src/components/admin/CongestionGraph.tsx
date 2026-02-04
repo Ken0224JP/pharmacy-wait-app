@@ -37,6 +37,7 @@ export default function CongestionGraph({ data }: CongestionGraphProps) {
             fontSize={11} 
             allowDecimals={false}
             stroke="#9ca3af"
+            unit='人'
           />
           <Tooltip 
             contentStyle={{ 
@@ -45,6 +46,10 @@ export default function CongestionGraph({ data }: CongestionGraphProps) {
               boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
               fontSize: '12px'
             }}
+          formatter={(value: any, name: any) => [
+                `${value}人`, 
+                name
+            ]}
           />
           <Legend 
             align="center"
