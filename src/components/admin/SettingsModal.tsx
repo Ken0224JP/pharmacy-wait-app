@@ -82,6 +82,7 @@ export default function SettingsModal({
           <div className="flex items-center gap-2">
             <input 
               type="number" 
+              inputMode="numeric"
               min="1"
               value={avgTime}
               onChange={(e) => setAvgTime(e.target.value)}
@@ -130,6 +131,7 @@ export default function SettingsModal({
               <div className="flex items-center gap-1 justify-center w-full">
                 <input
                   type="number"
+                  inputMode="numeric"
                   min="0"
                   value={thresholdLow}
                   onChange={(e) => setThresholdLow(e.target.value)}
@@ -144,6 +146,7 @@ export default function SettingsModal({
               <div className="flex items-center gap-1 justify-center w-full">
                 <input
                   type="number"
+                  inputMode="numeric"
                   min="0"
                   value={thresholdMedium}
                   onChange={(e) => setThresholdMedium(e.target.value)}

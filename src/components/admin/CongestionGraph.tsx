@@ -46,10 +46,6 @@ export default function CongestionGraph({ data }: CongestionGraphProps) {
               boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
               fontSize: '12px'
             }}
-          formatter={(value: any, name: any) => [
-                `${value}人`, 
-                name
-            ]}
           />
           <Legend 
             align="center"
@@ -67,6 +63,7 @@ export default function CongestionGraph({ data }: CongestionGraphProps) {
             barSize={20} 
             fill="#93c5fd"
             radius={[4, 4, 0, 0]} 
+            unit={"人"}
           />
 
           {/* 折れ線グラフ：その時間帯の最大同時待ち */}
@@ -78,6 +75,7 @@ export default function CongestionGraph({ data }: CongestionGraphProps) {
             strokeWidth={3}
             dot={{ r: 3, fill: '#2563eb' }}
             activeDot={{ r: 5 }}
+            unit={"人"}            
           />
         </ComposedChart>
       </ResponsiveContainer>
