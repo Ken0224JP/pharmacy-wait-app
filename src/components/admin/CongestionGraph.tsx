@@ -98,7 +98,7 @@ export default function CongestionGraph({ data, settings }: CongestionGraphProps
           {settings.showNewVisitors && (
             <Bar 
               yAxisId="left"
-              dataKey="newVisitors" 
+              dataKey="intervalNewVisitors" 
               name="新規受付数" 
               barSize={20} 
               fill="#93c5fd"
@@ -112,7 +112,7 @@ export default function CongestionGraph({ data, settings }: CongestionGraphProps
             <Line 
               yAxisId="left"
               type="monotone" 
-              dataKey="maxWait" 
+              dataKey="intervalMaxWait" 
               name="最大同時待ち" 
               stroke="#2563eb"
               strokeWidth={3}
@@ -127,7 +127,7 @@ export default function CongestionGraph({ data, settings }: CongestionGraphProps
             <Line 
               yAxisId="right"
               type="monotone" 
-              dataKey="avgWaitTime" 
+              dataKey="intervalAvgWaitTime" 
               name="平均待ち時間" 
               stroke="#f59e0b" // オレンジ
               strokeWidth={2}

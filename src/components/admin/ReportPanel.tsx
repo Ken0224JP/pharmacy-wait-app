@@ -111,9 +111,9 @@ export default function ReportPanel({ store, graphSettings }: ReportPanelProps) 
               
               <p 
                 className="text-7xl font-bold transition-colors duration-300"
-                style={{ color: getWaitTimeColor(report.avgWaitTime) }}
+                style={{ color: getWaitTimeColor(report.dailyAvgWaitTime) }}
               >
-                {report.avgWaitTime}<span className="text-sm text-gray-400 ml-1">分</span>
+                {report.dailyAvgWaitTime}<span className="text-sm text-gray-400 ml-1">分</span>
               </p>
               {settingAvgTime > 0 && (
                 <p className="text-xs text-gray-400 mt-1">
@@ -129,10 +129,10 @@ export default function ReportPanel({ store, graphSettings }: ReportPanelProps) 
               </div>
 
               <p className="text-7xl font-bold text-gray-800">
-                {report.totalVisitors}<span className="text-sm text-gray-400 ml-1">人</span>
+                {report.dailyTotalVisitors}<span className="text-sm text-gray-400 ml-1">人</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                  (最大同時待ち：{report.maxWaitCount}人)
+                  (最大同時待ち：{report.dailyMaxWaitCount}人)
               </p>
             </div>
           </div>

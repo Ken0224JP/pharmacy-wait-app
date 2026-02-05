@@ -5,11 +5,11 @@ import { formatTime } from "@/lib/utils";
 const GRAPH_INTERVAL = 30; // 分単位
 
 export const calculateDailyStats = (logs: any[]): DailyStats => {
-  let totalArea = 0;      
-  let totalVisitors = 0;  
+  let dailyTotalArea = 0;      
+  let dailyTotalVisitors = 0;  
   let prevTime = 0;
   let prevCount = 0;
-  let maxWaitCount = 0;
+  let dailyMaxWaitCount = 0;
   let lastOpenTime: number | null = null;
   let lastCloseTime: number | null = null;
   
@@ -17,9 +17,9 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
   const graphData: GraphPoint[] = [];
 
   const emptyResult: DailyStats = {
-    totalVisitors: 0,
-    avgWaitTime: 0,
-    maxWaitCount: 0,
+    dailyTotalVisitors: 0,
+    dailyAvgWaitTime: 0,
+    dailyMaxWaitCount: 0,
     date: "",
     openTime: "",
     closeTime: "",
@@ -44,14 +44,14 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
     if (prevTime > 0) {
       const durationMinutes = (timestamp - prevTime) / (1000 * 60);
       if (durationMinutes > 0) {
-        totalArea += prevCount * durationMinutes;
+        dailyTotalArea += prevCount * durationMinutes;
       }
     }
 
-    if (log.action === "INCREMENT") totalVisitors++;
+    if (log.action === "INCREMENT") dailyTotalVisitors++;
     if (log.action === "OPEN" && !lastOpenTime) lastOpenTime = timestamp;
     if (log.action === "CLOSE") lastCloseTime = timestamp;
-    if (currentCount > maxWaitCount) maxWaitCount = currentCount;
+    if (currentCount > dailyMaxWaitCount) dailyMaxWaitCount = currentCount;
 
     prevTime = timestamp;
     prevCount = currentCount;
@@ -118,9 +118,9 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
 
       graphData.push({
         time: formatTime(currentBucketTime),
-        maxWait: maxInBucket,
-        newVisitors: visitorsInBucket,
-        avgWaitTime: avgWaitInBucket
+        intervalMaxWait: maxInBucket,
+        intervalNewVisitors: visitorsInBucket,
+        intervalAvgWaitTime: avgWaitInBucket
       });
 
       // 次の枠へ進める
@@ -129,7 +129,7 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
   }
 
   // 結果の整形
-  const avgWaitTime = totalVisitors > 0 ? Math.round(totalArea / totalVisitors) : 0;
+  const dailyAvgWaitTime = dailyTotalVisitors > 0 ? Math.round(dailyTotalArea / dailyTotalVisitors) : 0;
   
   let dateStr = "";
   let openTimeStr = "";
@@ -147,9 +147,9 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
   }
 
   return {
-    totalVisitors,
-    avgWaitTime,
-    maxWaitCount,
+    dailyTotalVisitors,
+    dailyAvgWaitTime,
+    dailyMaxWaitCount,
     date: dateStr,
     openTime: openTimeStr,
     closeTime: closeTimeStr,

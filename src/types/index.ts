@@ -4,9 +4,9 @@ import type { LogAction } from "@/lib/constants";
 // 集計グラフのデータポイント
 export interface GraphPoint {
   time: string;        // "09:00", "09:15" 等
-  maxWait: number;     // その区間の最大同時待ち人数（折れ線）
-  newVisitors: number; // その区間の新規受付人数（棒グラフ）
-  avgWaitTime: number; // 平均待ち時間（右軸・分）
+  intervalMaxWait: number;     // その区間の最大同時待ち人数（折れ線）
+  intervalNewVisitors: number; // その区間の新規受付人数（棒グラフ）
+  intervalAvgWaitTime: number; // 平均待ち時間（右軸・分）
 }
 
 // グラフの表示設定（Cookie保存用）
@@ -18,9 +18,9 @@ export interface GraphSettings {
 
 // 集計結果の型定義
 export interface DailyStats {
-  totalVisitors: number;
-  avgWaitTime: number;
-  maxWaitCount: number;
+  dailyTotalVisitors: number;
+  dailyAvgWaitTime: number;
+  dailyMaxWaitCount: number;
   date: string;       // "2023/12/25"
   openTime: string;   // "09:00"
   closeTime: string;  // "18:00"
