@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCog, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { getStoreTheme } from "@/lib/utils";
@@ -23,6 +24,37 @@ export default function Header({
     storeData.thresholdMedium
   );
 
+  // --- 放置警告用のロジック ---
+  const [isInactive, setIsInactive] = useState(false);
+
+  useEffect(() => {
+    // 状態チェック関数
+    const checkInactivity = () => {
+      // 閉店中、または日付データがない場合は警告しない
+      if (!storeData.isOpen || !storeData.updatedAt) {
+        setIsInactive(false);
+        return;
+      }
+
+      // 最終更新から15分経過しているかチェック
+      const lastUpdate = storeData.updatedAt.toMillis();
+      const now = Date.now();
+      const diff = now - lastUpdate;
+      
+      setIsInactive(diff >= 15*60*1000);
+    };
+
+    // 初回実行
+    checkInactivity();
+
+    // 1分ごとに再チェックするタイマーを設定
+    const intervalId = setInterval(checkInactivity, 60000);
+
+    // クリーンアップ関数
+    return () => clearInterval(intervalId);
+  }, [storeData.isOpen, storeData.updatedAt]); // storeDataが更新されたらリセット
+  // --------------------------------
+
   // 共通のボタン基本スタイル
   const baseBtnClass = "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95";
 
@@ -42,7 +74,10 @@ export default function Header({
             ${!storeData.isOpen
               ? "bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200"
               : "hover:opacity-90 border-transparent"}
+            ${isInactive ? "animate-pulse" : ""} 
           `}
+          /* ↑ isInactiveがtrueの場合に animate-pulse (点滅) を適用 */
+          
           style={storeData.isOpen ? {
             backgroundColor: theme.headerBg,
             color: theme.headerText,
@@ -58,7 +93,8 @@ export default function Header({
           {/* 設定ボタン */}
           <button
             onClick={onOpenSettings}
-            className={`${baseBtnClass} text-gray-400 hover:bg-gray-100 hover:text-gray-700 hover:scale-110`}
+            // 前回の変更: hover:rotate-90 を保持
+            className={`${baseBtnClass} text-gray-400 hover:bg-gray-100 hover:text-gray-700 hover:scale-110 hover:rotate-90`}
             title="設定"
           >
             <FontAwesomeIcon icon={faCog} size="lg" />
