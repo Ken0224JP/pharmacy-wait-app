@@ -36,7 +36,7 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
     return tA - tB;
   });
 
-  // 統計計算ループ
+  // 1. 全体の統計計算（日次）
   for (const log of sortedLogs) {
     const timestamp = new Date(log.timestamp).getTime();
     const currentCount = Number(log.resultCount);
@@ -57,69 +57,80 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
     prevCount = currentCount;
   }
 
-  // ★グラフデータの生成ロジック (新規追加)
+  // 2. グラフデータの生成ロジック
   if (lastOpenTime) {
-    // 開始時刻を30分単位に切り捨て (例: 09:12 -> 09:00)
+    // 開始時刻を30分単位に切り捨て
     let currentBucketTime = new Date(lastOpenTime);
     currentBucketTime.setMinutes(Math.floor(currentBucketTime.getMinutes() / GRAPH_INTERVAL) * GRAPH_INTERVAL);
     currentBucketTime.setSeconds(0);
     currentBucketTime.setMilliseconds(0);
     
-    // 終了時刻（閉店または現在の最終ログ時刻）
+    // 終了時刻
     const endTime = lastCloseTime || prevTime;
 
     let logIndex = 0;
-    let currentSimulatedCount = 0; // シミュレーション上の現在人数
+    
+    // シミュレーション用変数
+    let currentSimCount = 0; 
+    let lastCalcTime = currentBucketTime.getTime();
 
     // 終了時刻を超えるまで 30分ずつループ
     while (currentBucketTime.getTime() <= endTime) {
       const nextBucketTime = currentBucketTime.getTime() + (GRAPH_INTERVAL * 60 * 1000);
       
-      let maxInBucket = currentSimulatedCount; // 区間開始時の人数で初期化
-      let visitorsInBucket = 0;                // 区間内の新規人数
-      // 区間内の平均待ち時間計算用変数
+      let maxInBucket = currentSimCount; 
+      
+      // ★分母計算用：このバケットに関与したユニーク人数
+      // = (バケット開始時にいた人数) + (バケット期間中に新しく来た人数)
+      const startCount = currentSimCount; 
+      let newVisitorsInBucket = 0;
+      
       let bucketArea = 0; 
-      let lastCalcTime = currentBucketTime.getTime();
 
       // 次の区間時刻になるまでのログを全て処理
       while (logIndex < sortedLogs.length) {
         const log = sortedLogs[logIndex];
         const logTime = new Date(log.timestamp).getTime();
         
-        // ログの時刻が次の区間より前なら、この区間の出来事として処理
         if (logTime < nextBucketTime) {
-          // ★ログ発生までの面積を加算
           const durationMin = (logTime - lastCalcTime) / (1000 * 60);
-          bucketArea += currentSimulatedCount * durationMin;
+          bucketArea += currentSimCount * durationMin;
 
           if (log.action === "INCREMENT") {
-            visitorsInBucket++;
+            newVisitorsInBucket++;
           }
           
-          currentSimulatedCount = Number(log.resultCount);
-          
-          // 区間内の最大待ち人数を更新
-          if (currentSimulatedCount > maxInBucket) {
-            maxInBucket = currentSimulatedCount;
+          currentSimCount = Number(log.resultCount);
+          if (currentSimCount > maxInBucket) {
+            maxInBucket = currentSimCount;
           }
+
+          lastCalcTime = logTime;
           logIndex++;
         } else {
-          // 次の区間に入ったのでループを抜ける
           break;
         }
       }
 
-      // ★区間終了までの残りの面積を加算
+      // 区間終了までの残りの面積を加算
       const remainingDuration = (nextBucketTime - lastCalcTime) / (1000 * 60);
-      bucketArea += currentSimulatedCount * remainingDuration;
+      bucketArea += currentSimCount * remainingDuration;
+      
+      // 計算基準時刻を更新
+      lastCalcTime = nextBucketTime;
 
-      // ★平均待ち時間の算出 (区間内面積 / 区間内新規人数)
-      const avgWaitInBucket = visitorsInBucket > 0 ? Math.round(bucketArea / visitorsInBucket) : 0;
+      // ★平均待ち時間の算出
+      // 面積(延べ待ち時間) ÷ (開始時人数 ＋ 新規人数)
+      // これにより、値は必ず 0 〜 30(バケット長) の間に収まる
+      const totalParticipants = startCount + newVisitorsInBucket;
+      const avgWaitInBucket = totalParticipants > 0 
+        ? Math.round(bucketArea / totalParticipants) 
+        : 0;
 
       graphData.push({
         time: formatTime(currentBucketTime),
         intervalMaxWait: maxInBucket,
-        intervalNewVisitors: visitorsInBucket,
+        intervalNewVisitors: newVisitorsInBucket,
         intervalAvgWaitTime: avgWaitInBucket
       });
 

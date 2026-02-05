@@ -22,6 +22,33 @@ interface SettingsModalProps {
   ) => void;
 }
 
+// トグルスイッチ用コンポーネント
+const ToggleSwitch = ({ 
+  label, 
+  checked, 
+  onChange 
+}: { 
+  label: string; 
+  checked: boolean; 
+  onChange: () => void;
+}) => {
+  return (
+    <div className="flex items-center justify-between py-2 cursor-pointer" onClick={onChange}>
+      <span className="text-gray-700">{label}</span>
+      <div className="relative inline-flex items-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          className="sr-only peer" 
+          checked={checked} 
+          readOnly // onChangeは親divで発火させるためreadOnlyにしています
+        />
+        {/* スイッチの背景 (OFF: グレー / ON: 青) */}
+        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+      </div>
+    </div>
+  );
+};
+
 export default function SettingsModal({ 
   isOpen, 
   onClose, 
@@ -91,7 +118,7 @@ export default function SettingsModal({
         </div>
         
         {/* 一人あたりの待ち時間 */}
-        <div className="mb-8  border-t border-gray-300 pt-6">
+        <div className="mb-8 border-t border-gray-300 pt-6">
           <label className="block text-sm font-bold text-gray-700 mb-2">
             一人あたりの目安時間 (分)
           </label>
@@ -143,7 +170,7 @@ export default function SettingsModal({
           {/* 入力フィールド */}
           <div className="flex w-full gap-2">
             {/* 青の下 */}
-            <div className="flex-1 flex flex-col items-center  pt-3">
+            <div className="flex-1 flex flex-col items-center pt-3">
               <div className="flex items-center gap-1 justify-center w-full">
                 <input
                   type="number"
@@ -158,7 +185,7 @@ export default function SettingsModal({
             </div>
 
             {/* 黄色の下 */}
-            <div className="flex-1 flex flex-col items-center border-l border-r border-dashed border-gray-300 px-1  pt-3">
+            <div className="flex-1 flex flex-col items-center border-l border-r border-dashed border-gray-300 px-1 pt-3">
               <div className="flex items-center gap-1 justify-center w-full">
                 <input
                   type="number"
@@ -183,37 +210,25 @@ export default function SettingsModal({
           </p>
         </div>
 
-        {/* グラフ表示設定 */}
+        {/* グラフ表示設定（トグルスイッチに変更） */}
         <div className="mb-6 border-t border-gray-300 pt-6">
           <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示項目</h4>
-          <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={graphSettings.showNewVisitors} 
-                onChange={() => toggleGraphSetting("showNewVisitors")}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <span className="text-gray-700">新規受付数 (棒グラフ)</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={graphSettings.showMaxWait} 
-                onChange={() => toggleGraphSetting("showMaxWait")}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <span className="text-gray-700">最大同時待ち (青線)</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={graphSettings.showAvgWait} 
-                onChange={() => toggleGraphSetting("showAvgWait")}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <span className="text-gray-700">平均待ち時間 (橙線)</span>
-            </label>
+          <div className="space-y-1">
+            <ToggleSwitch 
+              label="新規受付数 (棒グラフ)" 
+              checked={graphSettings.showNewVisitors} 
+              onChange={() => toggleGraphSetting("showNewVisitors")}
+            />
+            <ToggleSwitch 
+              label="最大同時待ち (青線)" 
+              checked={graphSettings.showMaxWait} 
+              onChange={() => toggleGraphSetting("showMaxWait")}
+            />
+            <ToggleSwitch 
+              label="平均待ち時間 (橙点線)" 
+              checked={graphSettings.showAvgWait} 
+              onChange={() => toggleGraphSetting("showAvgWait")}
+            />
           </div>
         </div>
 
