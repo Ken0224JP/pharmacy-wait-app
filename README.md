@@ -119,8 +119,10 @@ service cloud.firestore {
       allow update: if isStoreOwner(storeId)
                     // 型チェック
                     && (!('waitCount' in request.resource.data) || request.resource.data.waitCount is int)
-                    && (!('avgTime' in request.resource.data) || request.resource.data.avgTime is number)
                     && (!('isOpen' in request.resource.data) || request.resource.data.isOpen is bool)
+                    && (!('avgTime' in request.resource.data) || request.resource.data.avgTime is number)
+                    && (!('thresholdLow' in request.resource.data) || request.resource.data.thresholdLow is number)
+                    && (!('thresholdMedium' in request.resource.data) || request.resource.data.thresholdMedium is number)
     }
 
     // =========================================================
