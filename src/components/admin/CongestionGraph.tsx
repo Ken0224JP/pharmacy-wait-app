@@ -10,16 +10,19 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  Legend 
+  Legend,
+  ReferenceLine,
+  Label, 
 } from 'recharts';
 import { GraphPoint, GraphSettings } from '@/types';
 
 interface CongestionGraphProps {
   data: GraphPoint[];
-  settings: GraphSettings; // ★設定を受け取る
+  settings: GraphSettings;
+  referenceWaitTime: number;
 }
 
-export default function CongestionGraph({ data, settings }: CongestionGraphProps) {
+export default function CongestionGraph({ data, settings, referenceWaitTime }: CongestionGraphProps) {
   if (!data || data.length === 0) return null;
 
   // 左軸の要素（新規受付数、最大同時待ち）のいずれかが表示されるか
@@ -74,6 +77,25 @@ export default function CongestionGraph({ data, settings }: CongestionGraphProps
                unit='分'
                orientation="right"
              />
+          )}
+
+          {/* ★追加: 目安待ち時間の基準線（平均待ち時間が表示されている時のみ） */}
+          {settings.showAvgWait && referenceWaitTime > 0 && (
+            <ReferenceLine 
+              yAxisId="right" 
+              y={referenceWaitTime} 
+              stroke="#f59e0b"
+              strokeWidth={1}
+            >
+              <Label 
+                value={`設定`} 
+                position="right" 
+                fill="#f59e0b"
+                fontWeight="bold"
+                fontSize={10}
+                offset={10}
+              />
+            </ReferenceLine>
           )}
 
           <Tooltip 

@@ -155,7 +155,7 @@ export default function ReportPanel({ store, graphSettings }: ReportPanelProps) 
                 <FontAwesomeIcon icon={faSquarePollVertical} className="w-4 h-4 text-gray-400" />
                 <span className="text-sm font-medium">時間帯別混雑状況</span>
               </div>
-              <CongestionGraph data={report.graphData} settings={graphSettings} />
+              <CongestionGraph data={report.graphData} settings={graphSettings} referenceWaitTime={store.avgTime}/>
             </div>
           )}
 
