@@ -116,7 +116,7 @@ export default function SettingsModal({
           <h4 className="text-sm font-bold text-gray-800 mb-3">混雑状況に応じた色変化の閾値</h4>
           
           {/* カラーバー */}
-          <div className="flex w-full h-10 rounded-lg overflow-hidden text-xs md:text-sm text-white font-bold shadow-sm mb-3">
+          <div className="flex w-full h-10 rounded-lg overflow-hidden text-xs md:text-sm text-white font-bold shadow-sm">
             {/* 低 (青) */}
             <div 
               className="flex-1 flex items-center justify-center"
@@ -143,7 +143,7 @@ export default function SettingsModal({
           {/* 入力フィールド */}
           <div className="flex w-full gap-2">
             {/* 青の下 */}
-            <div className="flex-1 flex flex-col items-center">
+            <div className="flex-1 flex flex-col items-center  pt-3">
               <div className="flex items-center gap-1 justify-center w-full">
                 <input
                   type="number"
@@ -158,7 +158,7 @@ export default function SettingsModal({
             </div>
 
             {/* 黄色の下 */}
-            <div className="flex-1 flex flex-col items-center border-l border-r border-gray-100 px-1">
+            <div className="flex-1 flex flex-col items-center border-l border-r border-dashed border-gray-300 px-1  pt-3">
               <div className="flex items-center gap-1 justify-center w-full">
                 <input
                   type="number"
@@ -173,7 +173,7 @@ export default function SettingsModal({
             </div>
 
             {/* 赤の下 */}
-            <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+            <div className="flex-1 flex items-center justify-center text-gray-500 text-sm pt-3">
               それ以上
             </div>
           </div>
