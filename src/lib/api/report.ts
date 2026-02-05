@@ -9,12 +9,12 @@ import {
 } from "firebase/firestore";
 import { calculateDailyStats } from "@/lib/analytics";
 import { DailyLogDocument } from "@/types";
-import { FIRESTORE_COLLECTION_LOGS } from "@/lib/constants";
+import { FIRESTORE_COLLECTION_LOGS, DEFAULT_GRAPH_INTERVAL } from "@/lib/constants";
 
 /**
  * 指定した店舗の最新の1日分ログを取得し、統計を計算して返す
  */
-export const getLatestReport = async (store: { id: string }) => {
+export const getLatestReport = async (store: { id: string }, intervalMinutes: number = DEFAULT_GRAPH_INTERVAL) => {
   const storeId = store.id;
 
   // 最新の1日分ログを1件だけ取得（日付降順）
@@ -35,5 +35,5 @@ export const getLatestReport = async (store: { id: string }) => {
   const data = snapshot.docs[0].data() as DailyLogDocument;
   
   // その場で面積方式で計算
-  return calculateDailyStats(data.logs);
+  return calculateDailyStats(data.logs, intervalMinutes);
 };

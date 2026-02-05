@@ -51,6 +51,8 @@ export const RATIO_THRESHOLD_MEDIUM = 2.0;
 
 /** デフォルトの1人あたりの待ち時間（分） */
 export const DEFAULT_AVG_WAIT_MINUTES = 5;
+/** グラフのデフォルト表示粒度（分） */
+export const DEFAULT_GRAPH_INTERVAL = 30;
 
 // ==========================================
 // その他の設定

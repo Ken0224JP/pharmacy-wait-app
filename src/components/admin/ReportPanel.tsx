@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { COLOR_CONFIG, RATIO_THRESHOLD_LOW, RATIO_THRESHOLD_MEDIUM } from "@/lib/constants";
+import { COLOR_CONFIG, RATIO_THRESHOLD_LOW, RATIO_THRESHOLD_MEDIUM, DEFAULT_GRAPH_INTERVAL } from "@/lib/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClock, faUsers, faSquarePollVertical } from "@fortawesome/free-solid-svg-icons";
 import { getLatestReport } from "@/lib/api/report";
@@ -25,7 +25,8 @@ export default function ReportPanel({ store, graphSettings }: ReportPanelProps) 
       try {
         setLoading(true);
         setError(false);
-        const data = await getLatestReport(store);
+        const interval = graphSettings.graphInterval ?? DEFAULT_GRAPH_INTERVAL;
+        const data = await getLatestReport(store, interval);
         setReport(data);
       } catch (err) {
         console.error("Report Fetch Error:", err);
@@ -42,7 +43,7 @@ export default function ReportPanel({ store, graphSettings }: ReportPanelProps) 
       fetchReport();
       lastFetchedStoreId.current = store.id;
     }    
-  }, [store?.id, store?.isOpen]); 
+  }, [store?.id, store?.isOpen, graphSettings.graphInterval]);
 
   if (!store) return null;
 

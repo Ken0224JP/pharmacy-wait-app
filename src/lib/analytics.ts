@@ -1,11 +1,9 @@
 import { DailyStats, GraphPoint } from "@/types";
 import { formatTime } from "@/lib/utils";
+import { DEFAULT_GRAPH_INTERVAL } from "@/lib/constants";
 
-// ★定数定義
-const GRAPH_INTERVAL = 30; // 分単位
-
-export const calculateDailyStats = (logs: any[]): DailyStats => {
-  let dailyTotalArea = 0;      
+export const calculateDailyStats = (logs: any[], intervalMinutes: number = DEFAULT_GRAPH_INTERVAL): DailyStats => {  let dailyTotalArea = 0;      
+  const GRAPH_INTERVAL = intervalMinutes; // ★引数の値を使用
   let dailyTotalVisitors = 0;  
   let prevTime = 0;
   let prevCount = 0;

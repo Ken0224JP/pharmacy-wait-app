@@ -14,6 +14,7 @@ export interface GraphSettings {
   showNewVisitors: boolean;
   showMaxWait: boolean;
   showAvgWait: boolean;
+  graphInterval?: number;
 }
 
 // 集計結果の型定義

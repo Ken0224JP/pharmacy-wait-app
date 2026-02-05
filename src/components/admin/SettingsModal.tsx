@@ -5,6 +5,7 @@ import {
   DEFAULT_AVG_WAIT_MINUTES,
   DEFAULT_THRESHOLD_LOW,
   DEFAULT_THRESHOLD_MEDIUM,
+  DEFAULT_GRAPH_INTERVAL,
   COLOR_CONFIG
 } from "@/lib/constants";
 import { GraphSettings } from "@/types";
@@ -25,15 +26,17 @@ interface SettingsModalProps {
 // トグルスイッチ用コンポーネント
 const ToggleSwitch = ({ 
   label, 
+  caption,
   checked, 
   onChange 
 }: { 
   label: string; 
+  caption: string; 
   checked: boolean; 
   onChange: () => void;
 }) => {
   return (
-    <div className="flex items-center justify-between py-2 cursor-pointer" onClick={onChange}>
+    <div className="flex items-center justify-between py-1 cursor-pointer" onClick={onChange}>
       <div className="relative inline-flex items-center cursor-pointer">
         <input 
           type="checkbox" 
@@ -42,8 +45,9 @@ const ToggleSwitch = ({
           readOnly // onChangeは親divで発火させるためreadOnlyにしています
         />
         {/* スイッチの背景 (OFF: グレー / ON: 青) */}
-        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-      <span className="pl-2 text-gray-700">{label}</span>
+        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+      <span className="pl-2 text-gray-700 text-sm font-bold">{label}</span>
+      <span className="pl-2 text-gray-700 text-xs">{caption}</span>
       </div>
     </div>
   );
@@ -66,8 +70,11 @@ export default function SettingsModal({
   const [graphSettings, setGraphSettings] = useState<GraphSettings>({
     showNewVisitors: true,
     showMaxWait: true,
-    showAvgWait: true
+    showAvgWait: true,
+    graphInterval: DEFAULT_GRAPH_INTERVAL
   });
+  // インターバル入力用の一時State
+  const [inputInterval, setInputInterval] = useState<number | string>(DEFAULT_GRAPH_INTERVAL);
 
   useEffect(() => {
     if (isOpen) {
@@ -75,6 +82,7 @@ export default function SettingsModal({
       setThresholdLow(currentThresholdLow ?? DEFAULT_THRESHOLD_LOW);
       setThresholdMedium(currentThresholdMedium ?? DEFAULT_THRESHOLD_MEDIUM);
       setGraphSettings(currentGraphSettings);
+      setInputInterval(currentGraphSettings.graphInterval ?? DEFAULT_GRAPH_INTERVAL);
     }
   }, [isOpen, currentAvgTime, currentThresholdLow, currentThresholdMedium, currentGraphSettings]);
 
@@ -82,6 +90,7 @@ export default function SettingsModal({
     const avgVal = Number(avgTime);
     const lowVal = Number(thresholdLow);
     const medVal = Number(thresholdMedium);
+    const intervalVal = Number(inputInterval);
 
     if (!isNaN(avgVal) && avgVal > 0 && !isNaN(lowVal) && !isNaN(medVal)) {
       // バリデーション: 低の閾値 < 中の閾値 である必要があります
@@ -91,7 +100,7 @@ export default function SettingsModal({
       }
       onSave(
         { avgTime: avgVal, thresholdLow: lowVal, thresholdMedium: medVal },
-        graphSettings
+        { ...graphSettings, graphInterval: intervalVal }
       );
       onClose();
     } else {
@@ -118,7 +127,7 @@ export default function SettingsModal({
         </div>
         
         {/* 一人あたりの待ち時間 */}
-        <div className="mb-8 border-t border-gray-300 pt-6">
+        <div className="mb-3 border-t border-gray-300 pt-3">
           <label className="block text-sm font-bold text-gray-700 mb-2">
             一人あたりの目安時間 (分)
           </label>
@@ -129,9 +138,9 @@ export default function SettingsModal({
               min="1"
               value={avgTime}
               onChange={(e) => setAvgTime(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 w-24 text-lg font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none text-right"
+              className="border border-gray-300 rounded-lg px-2 py-1 w-20 text-lg font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none text-right"
             />
-            <span className="text-gray-600 font-bold">分</span>
+            <span className="text-sm text-gray-600 font-bold">分</span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
             ※ この値 × 待ち人数 で「目安待ち時間」が計算されます。
@@ -139,7 +148,7 @@ export default function SettingsModal({
         </div>
 
         {/* 混雑状況に応じた色変化の閾値 */}
-        <div className="mb-6 pt-6 border-t border-gray-300">
+        <div className="mb-3 pt-3 border-t border-gray-300">
           <h4 className="text-sm font-bold text-gray-800 mb-3">混雑状況に応じた色変化の閾値</h4>
           
           {/* カラーバー */}
@@ -178,7 +187,7 @@ export default function SettingsModal({
                   min="0"
                   value={thresholdLow}
                   onChange={(e) => setThresholdLow(e.target.value)}
-                  className="w-full max-w-[4rem] p-2 border border-gray-300 rounded text-center font-bold text-gray-700 focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full max-w-[4rem] px-2 py-1 w-20 border border-gray-300 rounded text-center font-bold text-gray-700 focus:ring-2 focus:ring-teal-500 outline-none"
                 />
                 <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">人まで</span>
               </div>
@@ -193,7 +202,7 @@ export default function SettingsModal({
                   min="0"
                   value={thresholdMedium}
                   onChange={(e) => setThresholdMedium(e.target.value)}
-                  className="w-full max-w-[4rem] p-2 border border-gray-300 rounded text-center font-bold text-gray-700 focus:ring-2 focus:ring-yellow-500 outline-none"
+                  className="w-full max-w-[4rem] px-2 py-1 w-20 border border-gray-300 rounded text-center font-bold text-gray-700 focus:ring-2 focus:ring-yellow-500 outline-none"
                 />
                 <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">人まで</span>
               </div>
@@ -210,27 +219,50 @@ export default function SettingsModal({
           </p>
         </div>
 
-        {/* グラフ表示設定（トグルスイッチに変更） */}
-        <div className="mb-6 border-t border-gray-300 pt-6">
+        {/* グラフ表示設定 */}
+        <div className="mb-3 border-t border-gray-300 pt-3">
           <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示項目</h4>
           <div className="space-y-1">
             <ToggleSwitch 
-              label="新規受付数 (棒グラフ)" 
+              label="新規受付数　" 
+              caption="棒グラフ：青" 
               checked={graphSettings.showNewVisitors} 
               onChange={() => toggleGraphSetting("showNewVisitors")}
             />
             <ToggleSwitch 
-              label="最大同時待ち (青線)" 
+              label="最大同時待ち" 
+              caption="折れ線グラフ：青" 
               checked={graphSettings.showMaxWait} 
               onChange={() => toggleGraphSetting("showMaxWait")}
             />
             <ToggleSwitch 
-              label="平均待ち時間 (橙点線)" 
+              label="平均待ち時間" 
+              caption="折れ線グラフ：オレンジ" 
               checked={graphSettings.showAvgWait} 
               onChange={() => toggleGraphSetting("showAvgWait")}
             />
           </div>
         </div>
+
+        {/* 表示粒度設定 */}
+        <div className="mb-3 border-t border-gray-300 pt-3">
+          <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示粒度 (時間軸)</h4>
+          <div className="flex items-center gap-2">
+            <input 
+              type="number" 
+              inputMode="numeric"
+              min="1"
+              value={inputInterval}
+              onChange={(e) => setInputInterval(e.target.value)}
+              className="border border-gray-300 rounded px-2 py-1 w-20 text-right font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+            <span className="text-sm text-gray-600 font-bold">分ずつでまとめて計算</span>
+          </div>
+          <p className="mt-3 text-xs text-gray-500 mt-1">
+             ※ 計算上「表示粒度 ＝ 平均待ち時間の上限」となります。平均待ち時間のグラフを表示する場合は、ある程度長めに設定するよう留意してください。
+          </p>
+        </div>
+
 
         <div className="flex gap-3 justify-end pt-4 border-t border-gray-300">
           <button 

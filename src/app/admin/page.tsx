@@ -12,6 +12,7 @@ import StatusPanel from "@/components/admin/StatusPanel";
 import SettingsModal from "@/components/admin/SettingsModal";
 import ReportPanel from "@/components/admin/ReportPanel";
 import { GraphSettings } from "@/types";
+import { DEFAULT_GRAPH_INTERVAL } from "@/lib/constants";
 
 const COOKIE_KEY_GRAPH_SETTINGS = "pharmacy_graph_settings";
 
@@ -25,11 +26,12 @@ function AdminContent() {
   const [authLoading, setAuthLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  // グラフ設定のState (デフォルトは全表示)
+  // グラフ設定のState (デフォルトは全表示+ デフォルト間隔)
   const [graphSettings, setGraphSettings] = useState<GraphSettings>({
     showNewVisitors: true,
     showMaxWait: true,
-    showAvgWait: true
+    showAvgWait: true,
+    graphInterval: DEFAULT_GRAPH_INTERVAL
   });
 
   const { storeData, loading: dataLoading, toggleOpen, updateCount, updateSettings } = usePharmacyStore(targetStoreId);
