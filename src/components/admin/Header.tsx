@@ -24,7 +24,7 @@ export default function Header({
     storeData.thresholdMedium
   );
 
-  // --- 放置警告用のロジック ---
+  // 放置警告用のロジック
   const [isInactive, setIsInactive] = useState(false);
 
   useEffect(() => {
@@ -53,7 +53,13 @@ export default function Header({
     // クリーンアップ関数
     return () => clearInterval(intervalId);
   }, [storeData.isOpen, storeData.updatedAt]); // storeDataが更新されたらリセット
-  // --------------------------------
+
+  // ログアウト確認用ハンドラ
+  const handleLogout = () => {
+    if (window.confirm("ログアウトしますか？")) {
+      onLogout();
+    }
+  };
 
   // 共通のボタン基本スタイル
   const baseBtnClass = "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95";
@@ -102,7 +108,7 @@ export default function Header({
           
           {/* ログアウトボタン */}
           <button
-            onClick={onLogout}
+            onClick={handleLogout}
             className={`${baseBtnClass} text-gray-400 hover:bg-red-50 hover:text-red-500 hover:scale-110`}
             title="ログアウト"
           >
