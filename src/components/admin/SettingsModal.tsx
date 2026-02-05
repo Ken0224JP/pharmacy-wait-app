@@ -116,8 +116,9 @@ export default function SettingsModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg animate-[fadeIn_0.2s_ease-out]">
-        <div className="flex justify-between items-center pb-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg animate-[fadeIn_0.2s_ease-out] max-h-[90vh] flex flex-col">
+
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 shrink-0">
           <h3 className="text-xl font-bold text-gray-800">
             店舗・表示設定
           </h3>
@@ -126,145 +127,147 @@ export default function SettingsModal({
           </button>
         </div>
         
+        <div className="p-6 overflow-y-auto">
         {/* 一人あたりの待ち時間 */}
-        <div className="mb-3 border-t border-gray-300 pt-3">
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            一人あたりの目安時間 (分)
-          </label>
-          <div className="flex items-center gap-2">
-            <input 
-              type="number" 
-              inputMode="numeric"
-              min="1"
-              value={avgTime}
-              onChange={(e) => setAvgTime(e.target.value)}
-              className="border border-gray-300 rounded-lg px-2 py-1 w-20 text-lg font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none text-right"
-            />
-            <span className="text-sm text-gray-600 font-bold">分</span>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            ※ この値 × 待ち人数 で「目安待ち時間」が計算されます。
-          </p>
-        </div>
-
-        {/* 混雑状況に応じた色変化の閾値 */}
-        <div className="mb-3 pt-3 border-t border-gray-300">
-          <h4 className="text-sm font-bold text-gray-800 mb-3">混雑状況に応じた色変化の閾値</h4>
-          
-          {/* カラーバー */}
-          <div className="flex w-full h-10 rounded-lg overflow-hidden text-xs md:text-sm text-white font-bold shadow-sm">
-            {/* 低 (青) */}
-            <div 
-              className="flex-1 flex items-center justify-center"
-              style={{ backgroundColor: COLOR_CONFIG.low.headerBg }}
-            >
-              混雑度：低
+          <div className="mb-3 pb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              一人あたりの目安時間 (分)
+            </label>
+            <div className="flex items-center gap-2">
+              <input 
+                type="number" 
+                inputMode="numeric"
+                min="1"
+                value={avgTime}
+                onChange={(e) => setAvgTime(e.target.value)}
+                className="border border-gray-300 rounded-lg px-2 py-1 w-20 text-lg font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none text-right"
+              />
+              <span className="text-sm text-gray-600 font-bold">分</span>
             </div>
-            {/* 中 (黄) */}
-            <div 
-              className="flex-1 flex items-center justify-center"
-              style={{ backgroundColor: COLOR_CONFIG.medium.headerBg }}
-            >
-              混雑度：中
-            </div>
-            {/* 高 (赤) */}
-            <div 
-              className="flex-1 flex items-center justify-center"
-              style={{ backgroundColor: COLOR_CONFIG.high.headerBg }}
-            >
-              混雑度：高
-            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              ※ この値 × 待ち人数 で「目安待ち時間」が計算されます。
+            </p>
           </div>
 
-          {/* 入力フィールド */}
-          <div className="flex w-full gap-2">
-            {/* 青の下 */}
-            <div className="flex-1 flex flex-col items-center pt-3">
-              <div className="flex items-center gap-1 justify-center w-full">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  value={thresholdLow}
-                  onChange={(e) => setThresholdLow(e.target.value)}
-                  className="w-full max-w-[4rem] px-2 py-1 w-20 border border-gray-300 rounded text-center font-bold text-gray-700 focus:ring-2 focus:ring-teal-500 outline-none"
-                />
-                <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">人まで</span>
+          {/* 混雑状況に応じた色変化の閾値 */}
+          <div className="mb-3 pt-4 pb-3 border-t border-gray-300">
+            <h4 className="text-sm font-bold text-gray-800 mb-3">混雑状況に応じた色変化の閾値</h4>
+            
+            {/* カラーバー */}
+            <div className="flex w-full h-10 rounded-lg overflow-hidden text-xs md:text-sm text-white font-bold shadow-sm">
+              {/* 低 (青) */}
+              <div 
+                className="flex-1 flex items-center justify-center"
+                style={{ backgroundColor: COLOR_CONFIG.low.headerBg }}
+              >
+                混雑度：低
+              </div>
+              {/* 中 (黄) */}
+              <div 
+                className="flex-1 flex items-center justify-center"
+                style={{ backgroundColor: COLOR_CONFIG.medium.headerBg }}
+              >
+                混雑度：中
+              </div>
+              {/* 高 (赤) */}
+              <div 
+                className="flex-1 flex items-center justify-center"
+                style={{ backgroundColor: COLOR_CONFIG.high.headerBg }}
+              >
+                混雑度：高
               </div>
             </div>
 
-            {/* 黄色の下 */}
-            <div className="flex-1 flex flex-col items-center border-l border-r border-dashed border-gray-300 px-1 pt-3">
-              <div className="flex items-center gap-1 justify-center w-full">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  value={thresholdMedium}
-                  onChange={(e) => setThresholdMedium(e.target.value)}
-                  className="w-full max-w-[4rem] px-2 py-1 w-20 border border-gray-300 rounded text-center font-bold text-gray-700 focus:ring-2 focus:ring-yellow-500 outline-none"
-                />
-                <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">人まで</span>
+            {/* 入力フィールド */}
+            <div className="flex w-full gap-2">
+              {/* 青の下 */}
+              <div className="flex-1 flex flex-col items-center pt-3">
+                <div className="flex items-center gap-1 justify-center w-full">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    value={thresholdLow}
+                    onChange={(e) => setThresholdLow(e.target.value)}
+                    className="w-full max-w-[4rem] px-2 py-1 w-20 border border-gray-300 rounded text-center font-bold text-gray-700 focus:ring-2 focus:ring-teal-500 outline-none"
+                  />
+                  <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">人まで</span>
+                </div>
+              </div>
+
+              {/* 黄色の下 */}
+              <div className="flex-1 flex flex-col items-center border-l border-r border-dashed border-gray-300 px-1 pt-3">
+                <div className="flex items-center gap-1 justify-center w-full">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    value={thresholdMedium}
+                    onChange={(e) => setThresholdMedium(e.target.value)}
+                    className="w-full max-w-[4rem] px-2 py-1 w-20 border border-gray-300 rounded text-center font-bold text-gray-700 focus:ring-2 focus:ring-yellow-500 outline-none"
+                  />
+                  <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">人まで</span>
+                </div>
+              </div>
+
+              {/* 赤の下 */}
+              <div className="flex-1 flex items-center justify-center text-gray-500 text-sm pt-3">
+                それ以上
               </div>
             </div>
+            
+            <p className="mt-3 text-xs text-gray-500 mt-1">
+              ※ 待ち人数に応じて背景や文字の色が変化します。
+            </p>
+          </div>
 
-            {/* 赤の下 */}
-            <div className="flex-1 flex items-center justify-center text-gray-500 text-sm pt-3">
-              それ以上
+          {/* グラフ表示設定 */}
+          <div className="mb-3 pt-4 pb-3 border-t border-gray-300">
+            <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示項目</h4>
+            <div className="space-y-1">
+              <ToggleSwitch 
+                label="新規受付数　" 
+                caption="棒グラフ：青" 
+                checked={graphSettings.showNewVisitors} 
+                onChange={() => toggleGraphSetting("showNewVisitors")}
+              />
+              <ToggleSwitch 
+                label="最大同時待ち" 
+                caption="折れ線グラフ：青" 
+                checked={graphSettings.showMaxWait} 
+                onChange={() => toggleGraphSetting("showMaxWait")}
+              />
+              <ToggleSwitch 
+                label="平均待ち時間" 
+                caption="折れ線グラフ：オレンジ" 
+                checked={graphSettings.showAvgWait} 
+                onChange={() => toggleGraphSetting("showAvgWait")}
+              />
             </div>
           </div>
-          
-          <p className="mt-3 text-xs text-gray-500 mt-1">
-            ※ 待ち人数に応じて背景や文字の色が変化します。
-          </p>
-        </div>
 
-        {/* グラフ表示設定 */}
-        <div className="mb-3 border-t border-gray-300 pt-3">
-          <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示項目</h4>
-          <div className="space-y-1">
-            <ToggleSwitch 
-              label="新規受付数　" 
-              caption="棒グラフ：青" 
-              checked={graphSettings.showNewVisitors} 
-              onChange={() => toggleGraphSetting("showNewVisitors")}
-            />
-            <ToggleSwitch 
-              label="最大同時待ち" 
-              caption="折れ線グラフ：青" 
-              checked={graphSettings.showMaxWait} 
-              onChange={() => toggleGraphSetting("showMaxWait")}
-            />
-            <ToggleSwitch 
-              label="平均待ち時間" 
-              caption="折れ線グラフ：オレンジ" 
-              checked={graphSettings.showAvgWait} 
-              onChange={() => toggleGraphSetting("showAvgWait")}
-            />
+          {/* 表示粒度設定 */}
+          <div className="pt-4 pb-3 border-t border-gray-300">
+            <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示粒度 (時間軸)</h4>
+            <div className="flex items-center gap-2">
+              <input 
+                type="number" 
+                inputMode="numeric"
+                min="1"
+                value={inputInterval}
+                onChange={(e) => setInputInterval(e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1 w-20 text-right font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+              <span className="text-sm text-gray-600 font-bold">分ずつでまとめて計算</span>
+            </div>
+            <p className="mt-3 text-xs text-gray-500 mt-1">
+              ※ 計算上「表示粒度 ＝ 平均待ち時間の上限」となります。平均待ち時間のグラフを表示する場合は、ある程度長めに設定するよう留意してください。
+            </p>
           </div>
         </div>
 
-        {/* 表示粒度設定 */}
-        <div className="mb-3 border-t border-gray-300 pt-3">
-          <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示粒度 (時間軸)</h4>
-          <div className="flex items-center gap-2">
-            <input 
-              type="number" 
-              inputMode="numeric"
-              min="1"
-              value={inputInterval}
-              onChange={(e) => setInputInterval(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 w-20 text-right font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-            <span className="text-sm text-gray-600 font-bold">分ずつでまとめて計算</span>
-          </div>
-          <p className="mt-3 text-xs text-gray-500 mt-1">
-             ※ 計算上「表示粒度 ＝ 平均待ち時間の上限」となります。平均待ち時間のグラフを表示する場合は、ある程度長めに設定するよう留意してください。
-          </p>
-        </div>
 
-
-        <div className="flex gap-3 justify-end pt-4 border-t border-gray-300">
+        <div className="flex justify-end gap-3 p-6 border-t border-gray-200 shrink-0">
           <button 
             onClick={onClose} 
             className="px-4 py-2 text-gray-600 border border-gray-300 bg-gray-50 font-bold hover:bg-gray-100 rounded-lg transition-colors text-sm"
