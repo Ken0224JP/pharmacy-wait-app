@@ -59,7 +59,7 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
 
   // ★グラフデータの生成ロジック (新規追加)
   if (lastOpenTime) {
-    // 開始時刻を15分単位に切り捨て (例: 09:12 -> 09:00)
+    // 開始時刻を30分単位に切り捨て (例: 09:12 -> 09:00)
     let currentBucketTime = new Date(lastOpenTime);
     currentBucketTime.setMinutes(Math.floor(currentBucketTime.getMinutes() / GRAPH_INTERVAL) * GRAPH_INTERVAL);
     currentBucketTime.setSeconds(0);
@@ -71,12 +71,15 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
     let logIndex = 0;
     let currentSimulatedCount = 0; // シミュレーション上の現在人数
 
-    // 終了時刻を超えるまで 15分ずつループ
+    // 終了時刻を超えるまで 30分ずつループ
     while (currentBucketTime.getTime() <= endTime) {
       const nextBucketTime = currentBucketTime.getTime() + (GRAPH_INTERVAL * 60 * 1000);
       
       let maxInBucket = currentSimulatedCount; // 区間開始時の人数で初期化
       let visitorsInBucket = 0;                // 区間内の新規人数
+      // 区間内の平均待ち時間計算用変数
+      let bucketArea = 0; 
+      let lastCalcTime = currentBucketTime.getTime();
 
       // 次の区間時刻になるまでのログを全て処理
       while (logIndex < sortedLogs.length) {
@@ -85,6 +88,10 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
         
         // ログの時刻が次の区間より前なら、この区間の出来事として処理
         if (logTime < nextBucketTime) {
+          // ★ログ発生までの面積を加算
+          const durationMin = (logTime - lastCalcTime) / (1000 * 60);
+          bucketArea += currentSimulatedCount * durationMin;
+
           if (log.action === "INCREMENT") {
             visitorsInBucket++;
           }
@@ -102,10 +109,18 @@ export const calculateDailyStats = (logs: any[]): DailyStats => {
         }
       }
 
+      // ★区間終了までの残りの面積を加算
+      const remainingDuration = (nextBucketTime - lastCalcTime) / (1000 * 60);
+      bucketArea += currentSimulatedCount * remainingDuration;
+
+      // ★平均待ち時間の算出 (区間内面積 / 区間内新規人数)
+      const avgWaitInBucket = visitorsInBucket > 0 ? Math.round(bucketArea / visitorsInBucket) : 0;
+
       graphData.push({
         time: formatTime(currentBucketTime),
         maxWait: maxInBucket,
-        newVisitors: visitorsInBucket
+        newVisitors: visitorsInBucket,
+        avgWaitTime: avgWaitInBucket
       });
 
       // 次の枠へ進める

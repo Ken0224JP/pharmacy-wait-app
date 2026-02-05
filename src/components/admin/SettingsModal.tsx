@@ -5,8 +5,9 @@ import {
   DEFAULT_AVG_WAIT_MINUTES,
   DEFAULT_THRESHOLD_LOW,
   DEFAULT_THRESHOLD_MEDIUM,
-  COLOR_CONFIG // constants.ts から色設定をインポート
+  COLOR_CONFIG
 } from "@/lib/constants";
+import { GraphSettings } from "@/types";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -14,8 +15,11 @@ interface SettingsModalProps {
   currentAvgTime: number;
   currentThresholdLow?: number;
   currentThresholdMedium?: number;
-  // page.tsx 等の実装に合わせてオブジェクト形式でデータを渡します
-  onSave: (settings: { avgTime: number; thresholdLow: number; thresholdMedium: number }) => void;
+  currentGraphSettings: GraphSettings;
+  onSave: (
+    storeSettings: { avgTime: number; thresholdLow: number; thresholdMedium: number },
+    localSettings: GraphSettings
+  ) => void;
 }
 
 export default function SettingsModal({ 
@@ -24,19 +28,28 @@ export default function SettingsModal({
   currentAvgTime, 
   currentThresholdLow, 
   currentThresholdMedium, 
+  currentGraphSettings,
   onSave 
 }: SettingsModalProps) {
   const [avgTime, setAvgTime] = useState<number | string>(DEFAULT_AVG_WAIT_MINUTES);
   const [thresholdLow, setThresholdLow] = useState<number | string>(DEFAULT_THRESHOLD_LOW);
   const [thresholdMedium, setThresholdMedium] = useState<number | string>(DEFAULT_THRESHOLD_MEDIUM);
 
+  // グラフ設定用State
+  const [graphSettings, setGraphSettings] = useState<GraphSettings>({
+    showNewVisitors: true,
+    showMaxWait: true,
+    showAvgWait: true
+  });
+
   useEffect(() => {
     if (isOpen) {
       setAvgTime(currentAvgTime || DEFAULT_AVG_WAIT_MINUTES);
       setThresholdLow(currentThresholdLow ?? DEFAULT_THRESHOLD_LOW);
       setThresholdMedium(currentThresholdMedium ?? DEFAULT_THRESHOLD_MEDIUM);
+      setGraphSettings(currentGraphSettings);
     }
-  }, [isOpen, currentAvgTime, currentThresholdLow, currentThresholdMedium]);
+  }, [isOpen, currentAvgTime, currentThresholdLow, currentThresholdMedium, currentGraphSettings]);
 
   const handleSave = () => {
     const avgVal = Number(avgTime);
@@ -49,15 +62,18 @@ export default function SettingsModal({
         alert("「混雑度：低」の人数は「混雑度：中」の人数より小さく設定してください");
         return;
       }
-      onSave({ 
-        avgTime: avgVal, 
-        thresholdLow: lowVal, 
-        thresholdMedium: medVal 
-      });
+      onSave(
+        { avgTime: avgVal, thresholdLow: lowVal, thresholdMedium: medVal },
+        graphSettings
+      );
       onClose();
     } else {
       alert("有効な数値を入力してください");
     }
+  };
+
+  const toggleGraphSetting = (key: keyof GraphSettings) => {
+    setGraphSettings(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   if (!isOpen) return null;
@@ -65,9 +81,9 @@ export default function SettingsModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg animate-[fadeIn_0.2s_ease-out]">
-        <div className="flex justify-between items-center mb-6 border-b pb-4">
+        <div className="flex justify-between items-center pb-4">
           <h3 className="text-xl font-bold text-gray-800">
-            店舗設定
+            店舗・表示設定
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             ✕
@@ -75,7 +91,7 @@ export default function SettingsModal({
         </div>
         
         {/* 一人あたりの待ち時間 */}
-        <div className="mb-8">
+        <div className="mb-8  border-t border-gray-300 pt-6">
           <label className="block text-sm font-bold text-gray-700 mb-2">
             一人あたりの目安時間 (分)
           </label>
@@ -96,7 +112,7 @@ export default function SettingsModal({
         </div>
 
         {/* 混雑状況に応じた色変化の閾値 */}
-        <div className="mb-6">
+        <div className="mb-6 pt-6 border-t border-gray-300">
           <h4 className="text-sm font-bold text-gray-800 mb-3">混雑状況に応じた色変化の閾値</h4>
           
           {/* カラーバー */}
@@ -167,10 +183,44 @@ export default function SettingsModal({
           </p>
         </div>
 
-        <div className="flex gap-3 justify-end pt-4 border-t">
+        {/* グラフ表示設定 */}
+        <div className="mb-6 border-t border-gray-300 pt-6">
+          <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示項目</h4>
+          <div className="space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={graphSettings.showNewVisitors} 
+                onChange={() => toggleGraphSetting("showNewVisitors")}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-gray-700">新規受付数 (棒グラフ)</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={graphSettings.showMaxWait} 
+                onChange={() => toggleGraphSetting("showMaxWait")}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-gray-700">最大同時待ち (青線)</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={graphSettings.showAvgWait} 
+                onChange={() => toggleGraphSetting("showAvgWait")}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-gray-700">平均待ち時間 (橙線)</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="flex gap-3 justify-end pt-4 border-t border-gray-300">
           <button 
             onClick={onClose} 
-            className="px-4 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition-colors text-sm"
+            className="px-4 py-2 text-gray-600 border border-gray-300 bg-gray-50 font-bold hover:bg-gray-100 rounded-lg transition-colors text-sm"
           >
             キャンセル
           </button>

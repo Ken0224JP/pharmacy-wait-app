@@ -6,6 +6,14 @@ export interface GraphPoint {
   time: string;        // "09:00", "09:15" 等
   maxWait: number;     // その区間の最大同時待ち人数（折れ線）
   newVisitors: number; // その区間の新規受付人数（棒グラフ）
+  avgWaitTime: number; // 平均待ち時間（右軸・分）
+}
+
+// グラフの表示設定（Cookie保存用）
+export interface GraphSettings {
+  showNewVisitors: boolean;
+  showMaxWait: boolean;
+  showAvgWait: boolean;
 }
 
 // 集計結果の型定義

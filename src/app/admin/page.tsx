@@ -11,6 +11,9 @@ import Header from "@/components/admin/Header";
 import StatusPanel from "@/components/admin/StatusPanel";
 import SettingsModal from "@/components/admin/SettingsModal";
 import ReportPanel from "@/components/admin/ReportPanel";
+import { GraphSettings } from "@/types";
+
+const COOKIE_KEY_GRAPH_SETTINGS = "pharmacy_graph_settings";
 
 function AdminContent() {
   const searchParams = useSearchParams();
@@ -21,6 +24,13 @@ function AdminContent() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // グラフ設定のState (デフォルトは全表示)
+  const [graphSettings, setGraphSettings] = useState<GraphSettings>({
+    showNewVisitors: true,
+    showMaxWait: true,
+    showAvgWait: true
+  });
 
   const { storeData, loading: dataLoading, toggleOpen, updateCount, updateSettings } = usePharmacyStore(targetStoreId);
 
@@ -33,6 +43,19 @@ function AdminContent() {
     });
     return () => unsubscribe();
   }, [auth]);
+
+  // 初回ロード時にCookieから設定を読み込む
+  useEffect(() => {
+    try {
+      const match = document.cookie.match(new RegExp('(^| )' + COOKIE_KEY_GRAPH_SETTINGS + '=([^;]+)'));
+      if (match) {
+        const savedSettings = JSON.parse(decodeURIComponent(match[2]));
+        setGraphSettings(prev => ({ ...prev, ...savedSettings }));
+      }
+    } catch (e) {
+      console.error("Failed to load graph settings from cookie", e);
+    }
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -47,6 +70,23 @@ function AdminContent() {
       if (!isConfirmed) return;
     }
     toggleOpen();
+  };
+
+  // 設定保存ハンドラ (Store設定とGraph設定を一括処理)
+  const handleSaveSettings = async (
+    storeSettings: { avgTime: number; thresholdLow: number; thresholdMedium: number },
+    localSettings: GraphSettings
+  ) => {
+    // 1. Store設定をFirestoreに保存 (既存のupdateSettingsを使用)
+    await updateSettings(storeSettings);
+
+    // 2. グラフ設定をCookieに保存 (有効期限: 1年)
+    const expires = new Date();
+    expires.setFullYear(expires.getFullYear() + 1);
+    document.cookie = `${COOKIE_KEY_GRAPH_SETTINGS}=${encodeURIComponent(JSON.stringify(localSettings))}; expires=${expires.toUTCString()}; path=/`;
+
+    // 3. State更新
+    setGraphSettings(localSettings);
   };
 
   if (authLoading) return <div className="p-10 text-center">認証確認中...</div>;
@@ -85,11 +125,11 @@ function AdminContent() {
           <StatusPanel 
             storeData={storeData} 
             updateCount={updateCount}
-            // onOpenSettings はHeaderに移ったため削除
           />
         ) : (
           <ReportPanel 
             store={{ ...storeData, id: targetStoreId }} 
+            graphSettings={graphSettings} 
           />
         )}
       </main>
@@ -100,7 +140,8 @@ function AdminContent() {
         currentAvgTime={storeData.avgTime}
         currentThresholdLow={storeData.thresholdLow}
         currentThresholdMedium={storeData.thresholdMedium}
-        onSave={updateSettings}
+        currentGraphSettings={graphSettings}
+        onSave={handleSaveSettings}
       />
     </div>
   );

@@ -5,14 +5,15 @@ import { COLOR_CONFIG, RATIO_THRESHOLD_LOW, RATIO_THRESHOLD_MEDIUM } from "@/lib
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClock, faUsers, faSquarePollVertical } from "@fortawesome/free-solid-svg-icons";
 import { getLatestReport } from "@/lib/api/report";
-import { DailyStats, Store } from "@/types";
+import { DailyStats, Store, GraphSettings } from "@/types";
 import CongestionGraph from "./CongestionGraph";
 
 interface ReportPanelProps {
   store: Store | null;
+  graphSettings: GraphSettings;
 }
 
-export default function ReportPanel({ store }: ReportPanelProps) {
+export default function ReportPanel({ store, graphSettings }: ReportPanelProps) {
   const [report, setReport] = useState<DailyStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -33,21 +34,16 @@ export default function ReportPanel({ store }: ReportPanelProps) {
         setLoading(false);
       }
     };
-    // ▼▼▼ 無駄に発火し続けないための制御ロジック ▼▼▼    
-    // 条件1: 店舗が切り替わった（または初回ロード）かどうか
+    
     const isStoreChanged = lastFetchedStoreId.current !== store?.id;    
-    // 条件2: 現在「閉店」状態かどうか
     const isClosed = store?.isOpen === false;
-    // 「店舗が変わった時」または「閉店時」のみ実行する
-    // （＝同じ店舗で Open になった時は実行されない）
+
     if (store?.id && (isStoreChanged || isClosed)) {
       fetchReport();
-      // 取得したIDを記憶
       lastFetchedStoreId.current = store.id;
     }    
   }, [store?.id, store?.isOpen]); 
 
-  // storeがない場合は表示しない（早期リターン）
   if (!store) return null;
 
   const settingAvgTime = store.avgTime;
@@ -61,6 +57,15 @@ export default function ReportPanel({ store }: ReportPanelProps) {
     else if (ratio <= RATIO_THRESHOLD_MEDIUM) return COLOR_CONFIG.medium.accentColor;
     else return COLOR_CONFIG.high.accentColor;
   };
+
+  // グラフを表示するかどうかの判定
+  // データが存在し、かつ、表示項目が少なくとも1つ有効な場合のみ表示
+  const shouldShowGraph = 
+    !loading && 
+    !error && 
+    report?.graphData && 
+    report.graphData.length > 0 &&
+    (graphSettings.showNewVisitors || graphSettings.showMaxWait || graphSettings.showAvgWait);
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6 shadow-sm min-h-[200px]">
@@ -143,13 +148,14 @@ export default function ReportPanel({ store }: ReportPanelProps) {
             </p>
           </div>
 
-          {report.graphData && report.graphData.length > 0 && (
+          {/* グラフ表示条件を満たす場合のみ描画 */}
+          {shouldShowGraph && (
             <div className="pt-3">
               <div className="text-gray-500 px-2 flex items-center justify-center gap-2">
                 <FontAwesomeIcon icon={faSquarePollVertical} className="w-4 h-4 text-gray-400" />
                 <span className="text-sm font-medium">時間帯別混雑状況</span>
               </div>
-              <CongestionGraph data={report.graphData} />
+              <CongestionGraph data={report.graphData} settings={graphSettings} />
             </div>
           )}
 
