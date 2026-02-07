@@ -46,8 +46,8 @@ const ToggleSwitch = ({
         />
         {/* スイッチの背景 (OFF: グレー / ON: 青) */}
         <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
-      <span className="pl-2 text-gray-700 text-sm font-bold">{label}</span>
-      <span className="pl-2 text-gray-700 text-xs">{caption}</span>
+        <span className="pl-2 w-27 text-gray-700 text-sm font-bold">{label}</span>
+        <span className="text-gray-700 text-xs">{caption}</span>
       </div>
     </div>
   );
@@ -226,7 +226,7 @@ export default function SettingsModal({
             <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示項目</h4>
             <div className="space-y-1">
               <ToggleSwitch 
-                label="新規受付数　" 
+                label="受付数" 
                 caption="棒グラフ：青" 
                 checked={graphSettings.showNewVisitors} 
                 onChange={() => toggleGraphSetting("showNewVisitors")}

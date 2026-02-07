@@ -69,7 +69,7 @@ export default function ReportPanel({ store, graphSettings }: ReportPanelProps) 
     (graphSettings.showNewVisitors || graphSettings.showMaxWait || graphSettings.showAvgWait);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6 shadow-sm min-h-[200px]">
+    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm min-h-[200px]">
        <div className="flex justify-between items-center pb-4 mb-4 min-h-[3rem]">
         <h3 className="font-bold text-gray-700 text-lg">直近の営業実績</h3>
         <div className="text-right">

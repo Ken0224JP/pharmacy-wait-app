@@ -114,7 +114,6 @@ function AdminContent() {
 
   return (
     <div className="min-h-screen bg-gray-200 relative">
-      {/* Headerコンポーネントを使用 */}
       <Header 
         storeData={storeData}
         onToggleStatus={handleToggleStatus}
@@ -122,7 +121,7 @@ function AdminContent() {
         onLogout={handleLogout}
       />
 
-      <main className="max-w-md mx-auto p-6 mt-6 space-y-8 ">
+      <main className="max-w-md mx-auto pt-6 px-6 space-y-8 ">
         {storeData.isOpen ? (
           <StatusPanel 
             storeData={storeData} 

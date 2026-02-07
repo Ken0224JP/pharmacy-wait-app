@@ -3,7 +3,7 @@ import { formatTime } from "@/lib/utils";
 import { DEFAULT_GRAPH_INTERVAL } from "@/lib/constants";
 
 export const calculateDailyStats = (logs: any[], intervalMinutes: number = DEFAULT_GRAPH_INTERVAL): DailyStats => {  let dailyTotalArea = 0;      
-  const GRAPH_INTERVAL = intervalMinutes; // ★引数の値を使用
+  const GRAPH_INTERVAL = intervalMinutes;
   let dailyTotalVisitors = 0;  
   let prevTime = 0;
   let prevCount = 0;
@@ -11,7 +11,7 @@ export const calculateDailyStats = (logs: any[], intervalMinutes: number = DEFAU
   let lastOpenTime: number | null = null;
   let lastCloseTime: number | null = null;
   
-  // ★グラフ用データ配列
+  // グラフ用データ配列
   const graphData: GraphPoint[] = [];
 
   const emptyResult: DailyStats = {
@@ -78,7 +78,7 @@ export const calculateDailyStats = (logs: any[], intervalMinutes: number = DEFAU
       
       let maxInBucket = currentSimCount; 
       
-      // ★分母計算用：このバケットに関与したユニーク人数
+      // 分母計算用：このバケットに関与したユニーク人数
       // = (バケット開始時にいた人数) + (バケット期間中に新しく来た人数)
       const startCount = currentSimCount; 
       let newVisitorsInBucket = 0;
@@ -117,7 +117,7 @@ export const calculateDailyStats = (logs: any[], intervalMinutes: number = DEFAU
       // 計算基準時刻を更新
       lastCalcTime = nextBucketTime;
 
-      // ★平均待ち時間の算出
+      // 平均待ち時間の算出
       // 面積(延べ待ち時間) ÷ (開始時人数 ＋ 新規人数)
       // これにより、値は必ず 0 〜 30(バケット長) の間に収まる
       const totalParticipants = startCount + newVisitorsInBucket;

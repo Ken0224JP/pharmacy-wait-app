@@ -99,7 +99,6 @@ export default function Header({
           {/* 設定ボタン */}
           <button
             onClick={onOpenSettings}
-            // 前回の変更: hover:rotate-90 を保持
             className={`${baseBtnClass} text-gray-400 hover:bg-gray-100 hover:text-gray-700 hover:scale-110 hover:rotate-90`}
             title="設定"
           >

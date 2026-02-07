@@ -6,6 +6,7 @@ export interface ThemeColor {
 // ==========================================
 // Firestore 関連
 // ==========================================
+
 // /** 店舗情報コレクション */
 export const FIRESTORE_COLLECTION_STORES = "stores";
 /** ログ（日次アクション）コレクション */

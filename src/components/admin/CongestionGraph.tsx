@@ -40,7 +40,7 @@ export default function CongestionGraph({ data, settings, referenceWaitTime }: C
     // 2. 平均待ち時間のみ表示しない (左軸のみ、または両方非表示)
     chartMargin = { top: 10, right: 20, bottom: 0, left: -20 };
   } else {
-    // 3. 平均待ち時間が表示、かつ、新規受付数か最大同時待ちの一つ以上が表示 (左右両軸)
+    // 3. 平均待ち時間が表示、かつ、受付数か最大同時待ちの一つ以上が表示 (左右両軸)
     chartMargin = { top: 10, right: -10, bottom: 0, left: -20 };
   }
 
@@ -110,18 +110,18 @@ export default function CongestionGraph({ data, settings, referenceWaitTime }: C
           <Legend 
             align="center"
             wrapperStyle={{ 
-              width: '115%',
+              width: '111%',
               fontSize: '12px', 
               paddingTop: '10px'
             }} 
           />
 
-          {/* 新規受付数（棒グラフ） */}
+          {/* 受付数（棒グラフ） */}
           {settings.showNewVisitors && (
             <Bar 
               yAxisId="left"
               dataKey="intervalNewVisitors" 
-              name="新規受付数" 
+              name="受付数" 
               barSize={20} 
               fill="#93c5fd"
               radius={[4, 4, 0, 0]} 
