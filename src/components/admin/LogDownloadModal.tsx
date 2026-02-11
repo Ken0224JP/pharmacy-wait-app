@@ -96,7 +96,7 @@ export default function LogDownloadModal({ isOpen, onClose, storeId }: LogDownlo
         <div className="p-6 overflow-y-auto">
           
           {/* 選択範囲表示 */}
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 flex flex-col items-center justify-center text-center">
+          <div className="bg-blue-50 border border-blue-100 rounded-lg py-2 mb-6 flex flex-col items-center justify-center text-center">
             <span className="text-xs text-blue-600 font-bold tracking-wider uppercase mb-1">出力対象期間</span>
             <div className="text-lg font-bold text-gray-800 flex items-center gap-2">
               <span>{startDate ? formatDisplayDate(startDate) : "選択なし"}</span>

@@ -50,7 +50,7 @@ const ToggleSwitch = ({
         {/* スイッチの背景 (OFF: グレー / ON: 青) */}
         <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
         <span className="pl-2 w-27 text-gray-700 text-sm font-bold">{label}</span>
-        <span className="text-gray-700 text-xs">{caption}</span>
+        <span className="text-gray-400 text-xs">{caption}</span>
       </div>
     </div>
   );
@@ -135,8 +135,8 @@ export default function SettingsModal({
         <div className="p-6 overflow-y-auto">
         {/* 一人あたりの待ち時間 */}
           <div className="mb-3 pb-2">
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              一人あたりの目安時間 (分)
+            <label className="block text-sm font-bold text-gray-800 mb-2">
+              一人あたりの目安時間
             </label>
             <div className="flex items-center gap-2">
               <input 
@@ -149,12 +149,12 @@ export default function SettingsModal({
               />
               <span className="text-sm text-gray-600 font-bold">分</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-400 mt-1">
               ※ この値 × 待ち人数 で「目安待ち時間」が計算されます。
             </p>
           </div>
 
-          {/* 混雑状況に応じた色変化の閾値 */}
+        {/* 混雑状況に応じた色変化の閾値 */}
           <div className="mb-3 pt-4 pb-3 border-t border-gray-300">
             <h4 className="text-sm font-bold text-gray-800 mb-3">混雑状況に応じた色変化の閾値</h4>
             
@@ -221,12 +221,12 @@ export default function SettingsModal({
               </div>
             </div>
             
-            <p className="mt-3 text-xs text-gray-500 mt-1">
+            <p className="mt-3 text-xs text-gray-400 mt-1">
               ※ 待ち人数に応じて背景や文字の色が変化します。
             </p>
           </div>
 
-          {/* グラフ表示設定 */}
+        {/* グラフ表示設定 */}
           <div className="mb-3 pt-4 pb-3 border-t border-gray-300">
             <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示項目</h4>
             <div className="space-y-1">
@@ -251,7 +251,7 @@ export default function SettingsModal({
             </div>
           </div>
 
-          {/* 表示粒度設定 */}
+        {/* 表示粒度設定 */}
           <div className="pt-4 pb-3 border-t border-gray-300">
             <h4 className="text-sm font-bold text-gray-800 mb-3">レポートグラフ表示粒度 (時間軸)</h4>
             <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ export default function SettingsModal({
               />
               <span className="text-sm text-gray-600 font-bold">分ずつでまとめて計算</span>
             </div>
-            <p className="mt-3 text-xs text-gray-500 mt-1">
+            <p className="mt-3 text-xs text-gray-400 mt-1">
               ※ 計算上「表示粒度 ＝ 平均待ち時間の上限」となります。平均待ち時間のグラフを表示する場合は、ある程度長めに設定するよう留意してください。
             </p>
           </div>

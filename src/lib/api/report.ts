@@ -53,55 +53,6 @@ const getActionLabel = (action: LogAction): string => {
 };
 
 /**
- * 指定した日付のログを取得し、CSV形式の文字列で返す
- * データが存在しない場合は null を返す
- */
-export const getDailyLogCsv = async (storeId: string, dateStr: string): Promise<string | null> => {
-  // 指定日のドキュメントを取得
-  const q = query(
-    collection(db, FIRESTORE_COLLECTION_LOGS),
-    where("storeId", "==", storeId),
-    where("date", "==", dateStr), // "YYYY-MM-DD"
-    limit(1)
-  );
-
-  const snapshot = await getDocs(q);
-
-  if (snapshot.empty) {
-    return null;
-  }
-
-  const data = snapshot.docs[0].data() as DailyLogDocument;
-  const logs = data.logs;
-
-  // 時間の昇順にソート (念のため)
-  logs.sort((a, b) => a.timestamp - b.timestamp);
-
-  // CSVヘッダー
-  const header = "日時,操作内容,待ち人数\n";
-
-  // CSVボディ生成
-  const rows = logs.map(log => {
-    const dateObj = new Date(log.timestamp);
-    // 日時フォーマット: YYYY/MM/DD HH:mm:ss
-    const formattedDate = dateObj.toLocaleString("ja-JP", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    });
-
-    const actionLabel = getActionLabel(log.action);
-    
-    return `${formattedDate},${actionLabel},${log.resultCount}`;
-  });
-
-  return header + rows.join("\n");
-};
-
-/**
  * 指定した期間（開始日〜終了日）のログを取得し、CSV形式の文字列で返す
  * データが存在しない場合は null を返す
  */
