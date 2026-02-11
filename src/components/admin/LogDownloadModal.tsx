@@ -79,7 +79,7 @@ export default function LogDownloadModal({ isOpen, onClose, storeId }: LogDownlo
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* ヘッダー */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 shrink-0 shadow-[0_0_6px_0_rgba(0,0,0,0.15)] bg-gray-50">
+        <div className="flex justify-between items-center px-6 py-3 border-b border-gray-200 shrink-0 bg-gray-50">
           <div>
             <h3 className="font-bold text-xl text-gray-800">ログ出力</h3>
             <p className="text-xs text-gray-500 mt-0.5">出力したい期間を選択してください</p>
@@ -122,7 +122,7 @@ export default function LogDownloadModal({ isOpen, onClose, storeId }: LogDownlo
         </div>
 
         {/* フッター */}
-        <div className="bg-gray-50 flex justify-end gap-3 p-6 border-t border-gray-200 shrink-0">
+        <div className="bg-gray-50 flex justify-end gap-3 px-6 py-3 border-t border-gray-200 shrink-0">
           <button 
             onClick={onClose} 
             className="px-4 py-2 text-gray-600 border border-gray-300 bg-white font-bold hover:bg-gray-100 rounded-lg transition-colors text-sm"
@@ -134,7 +134,7 @@ export default function LogDownloadModal({ isOpen, onClose, storeId }: LogDownlo
             disabled={loading || !startDate || !endDate}
             className={`
               px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md font-bold text-sm flex items-center gap-2
-              ${(loading || !startDate || !endDate) ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-800 hover:shadow-lg hover:-translate-y-0.5"}
+              ${(loading || !startDate || !endDate) ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-800"}
               transition-all
             `}
           >

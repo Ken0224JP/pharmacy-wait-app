@@ -207,7 +207,7 @@ npm run dev
 src/
 ├── app/
 │   ├── admin/
-│   │   └── page.tsx            # 店舗管理画面 (認証・状態管理・WakeLock制御)
+│   │   └── page.tsx            # 店舗管理画面 (メイン)
 │   ├── view/
 │   │   └── page.tsx            # 患者向け表示画面 (個別店舗の待ち状況表示)
 │   ├── globals.css             # グローバルスタイル (Tailwind CSS)
@@ -216,16 +216,20 @@ src/
 │
 ├── components/                 # UIコンポーネント
 │   ├── admin/
-│   │   ├── LoginForm.tsx       # 管理画面：ログインフォーム
-│   │   ├── Header.tsx          # 管理画面：ヘッダー
-│   │   ├── ReportPanel.tsx     # 管理画面：集計結果表示パネル
 │   │   ├── CongestionGraph.tsx # 管理画面：集計のグラフ部分
-│   │   ├── SettingsModal.tsx   # 管理画面：待ち時間設定モーダル
+│   │   ├── Header.tsx          # 管理画面：ヘッダー
+│   │   ├── LogDownloadModal.tsx # 管理画面：ログ出力モーダル
+│   │   ├── LoginForm.tsx       # 管理画面：ログインフォーム
+│   │   ├── RangeCalendar.tsx   # 管理画面：期間選択カレンダー
+│   │   ├── ReportPanel.tsx     # 管理画面：集計結果表示パネル
+│   │   ├── SettingsModal.tsx   # 管理画面：設定モーダル
 │   │   └── StatusPanel.tsx     # 管理画面：待ち人数操作・表示パネル
 │   └── StoreStatusDisplay.tsx  # 店舗状況表示コンポーネント
 │
 ├── hooks/                      # カスタムフック (UIロジックの分離)
+│   ├── useAdminAuth.ts         # 管理画面の認証ロジック
 │   ├── useAllStores.ts         # 全店舗のリアルタイムデータ取得
+│   ├── useGraphSettings.ts     # グラフ表示設定の管理 (Cookie連携)
 │   ├── usePharmacyStore.ts     # 個別店舗の状態管理
 │   └── useWakeLock.ts          # 画面の常時点灯 (Wake Lock API) の制御
 │
