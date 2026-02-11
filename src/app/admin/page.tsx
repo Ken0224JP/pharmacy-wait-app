@@ -1,69 +1,40 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useGraphSettings } from "@/hooks/useGraphSettings";
 import { usePharmacyStore } from "@/hooks/usePharmacyStore";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { GraphSettings } from "@/types";
 
 import LoginForm from "@/components/admin/LoginForm";
 import Header from "@/components/admin/Header";
 import StatusPanel from "@/components/admin/StatusPanel";
-import SettingsModal from "@/components/admin/SettingsModal";
 import ReportPanel from "@/components/admin/ReportPanel";
-import { GraphSettings } from "@/types";
-import { DEFAULT_GRAPH_INTERVAL } from "@/lib/constants";
-
-const COOKIE_KEY_GRAPH_SETTINGS = "pharmacy_graph_settings";
+import SettingsModal from "@/components/admin/SettingsModal";
+import LogDownloadModal from "@/components/admin/LogDownloadModal";
 
 function AdminContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const targetStoreId = searchParams.get("id");
-  const auth = getAuth();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  // グラフ設定のState (デフォルトは全表示+ デフォルト間隔)
-  const [graphSettings, setGraphSettings] = useState<GraphSettings>({
-    showNewVisitors: true,
-    showMaxWait: true,
-    showAvgWait: true,
-    graphInterval: DEFAULT_GRAPH_INTERVAL
-  });
-
+  // --- 1. Custom Hooks (ロジックの注入) ---
+  const { user, loading: authLoading, isMismatch, logout } = useAdminAuth(targetStoreId);
+  const { settings: graphSettings, saveSettings: saveGraphSettings } = useGraphSettings();
   const { storeData, loading: dataLoading, toggleOpen, updateCount, updateSettings } = usePharmacyStore(targetStoreId);
 
+  // 営業中は画面スリープを防止
   useWakeLock(storeData?.isOpen || false);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, [auth]);
+  // --- 2. Local State (モーダルの開閉管理) ---
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLogsOpen, setIsLogsOpen] = useState(false);
 
-  // 初回ロード時にCookieから設定を読み込む
-  useEffect(() => {
-    try {
-      const match = document.cookie.match(new RegExp('(^| )' + COOKIE_KEY_GRAPH_SETTINGS + '=([^;]+)'));
-      if (match) {
-        const savedSettings = JSON.parse(decodeURIComponent(match[2]));
-        setGraphSettings(prev => ({ ...prev, ...savedSettings }));
-      }
-    } catch (e) {
-      console.error("Failed to load graph settings from cookie", e);
-    }
-  }, []);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.replace("/admin");
-  };
-
+  // --- 3. Event Handlers ---
+  
+  // 開店・閉店の切り替え（確認ダイアログ付き）
   const handleToggleStatus = async () => {
     if (!storeData) return;
     
@@ -74,54 +45,77 @@ function AdminContent() {
     toggleOpen();
   };
 
-  // 設定保存ハンドラ (Store設定とGraph設定を一括処理)
+  // 設定の一括保存 (Firestore + Cookie)
   const handleSaveSettings = async (
     storeSettings: { avgTime: number; thresholdLow: number; thresholdMedium: number },
     localSettings: GraphSettings
   ) => {
-    // 1. Store設定をFirestoreに保存 (既存のupdateSettingsを使用)
     await updateSettings(storeSettings);
-
-    // 2. グラフ設定をCookieに保存 (有効期限: 1年)
-    const expires = new Date();
-    expires.setFullYear(expires.getFullYear() + 1);
-    document.cookie = `${COOKIE_KEY_GRAPH_SETTINGS}=${encodeURIComponent(JSON.stringify(localSettings))}; expires=${expires.toUTCString()}; path=/`;
-
-    // 3. State更新
-    setGraphSettings(localSettings);
+    saveGraphSettings(localSettings);
   };
 
-  if (authLoading) return <div className="p-10 text-center">認証確認中...</div>;
+  // --- 4. Render Guards (条件分岐による表示切り替え) ---
 
+  // 認証チェック中
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-gray-500">認証確認中...</div>;
+  }
+
+  // 未ログイン -> ログインフォーム
   if (!user || !targetStoreId) {
     return <LoginForm />;
   }
 
-  const loggedInStoreId = user.email ? user.email.split("@")[0] : "";
-  if (loggedInStoreId !== targetStoreId) {
+  // 店舗ID不一致 (ログイン中のIDとURLのIDが違う)
+  if (isMismatch) {
+    const loggedInStoreId = user.email?.split("@")[0] || "";
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-200 p-4">
         <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
           <h2 className="text-xl font-bold text-red-600 mb-4">店舗不一致</h2>
-          <button onClick={() => router.push(`/admin?id=${loggedInStoreId}`)} className="bg-blue-600 text-white px-4 py-2 rounded">ログイン中の店舗へ移動</button>
+          <p className="text-gray-600 mb-6">ログイン中のアカウントでは、この店舗ページ（{targetStoreId}）にアクセスできません。</p>
+          <button 
+            onClick={() => router.push(`/admin?id=${loggedInStoreId}`)} 
+            className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition"
+          >
+            ログイン中の店舗へ移動
+          </button>
         </div>
       </div>
     );
   }
 
-  if (dataLoading) return <div className="p-10 text-center">店舗データ読み込み中...</div>;
-  if (!storeData) return <div className="p-10 text-center">店舗データが見つかりません (ID: {targetStoreId})</div>;
+  // 店舗データ読み込み中
+  if (dataLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-gray-500">店舗データ読み込み中...</div>;
+  }
 
+  // 店舗データが見つからない
+  if (!storeData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-200">
+        <div className="text-center text-gray-500">
+          <p>店舗データが見つかりません</p>
+          <p className="text-sm mt-1">(ID: {targetStoreId})</p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- 5. Main Render (正常表示) ---
   return (
-    <div className="min-h-screen bg-gray-200 relative">
+    <div className="min-h-screen bg-gray-200 relative pb-20">
+      {/* ヘッダー (メニュー操作はここから) */}
       <Header 
         storeData={storeData}
         onToggleStatus={handleToggleStatus}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onLogout={handleLogout}
+        onOpenLogs={() => setIsLogsOpen(true)}
+        onLogout={logout}
       />
 
-      <main className="max-w-md mx-auto pt-6 px-6 space-y-8 ">
+      {/* メインコンテンツ */}
+      <main className="max-w-md mx-auto pt-6 px-6 space-y-8 animate-fade-in">
         {storeData.isOpen ? (
           <StatusPanel 
             storeData={storeData} 
@@ -135,6 +129,7 @@ function AdminContent() {
         )}
       </main>
 
+      {/* 設定モーダル */}
       <SettingsModal 
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -144,13 +139,20 @@ function AdminContent() {
         currentGraphSettings={graphSettings}
         onSave={handleSaveSettings}
       />
+
+      {/* 業務ログ出力モーダル */}
+      <LogDownloadModal 
+        isOpen={isLogsOpen}
+        onClose={() => setIsLogsOpen(false)}
+        storeId={targetStoreId}
+      />
     </div>
   );
 }
 
 export default function AdminPage() {
   return (
-    <Suspense fallback={<div className="p-10 text-center">読み込み中...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">読み込み中...</div>}>
       <AdminContent />
     </Suspense>
   );

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCog, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faFileCsv, faCog, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { getStoreTheme } from "@/lib/utils";
 import { StoreData } from "@/types";
 
@@ -8,6 +8,7 @@ interface HeaderProps {
   storeData: StoreData;
   onToggleStatus: () => void;
   onOpenSettings: () => void;
+  onOpenLogs: () => void;
   onLogout: () => void;
 }
 
@@ -15,6 +16,7 @@ export default function Header({
   storeData, 
   onToggleStatus, 
   onOpenSettings, 
+  onOpenLogs,
   onLogout 
 }: HeaderProps) {
   const theme = getStoreTheme(
@@ -24,45 +26,43 @@ export default function Header({
     storeData.thresholdMedium
   );
 
-  // 放置警告用のロジック
   const [isInactive, setIsInactive] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  // 放置警告ロジック
   useEffect(() => {
-    // 状態チェック関数
     const checkInactivity = () => {
-      // 閉店中、または日付データがない場合は警告しない
       if (!storeData.isOpen || !storeData.updatedAt) {
         setIsInactive(false);
         return;
       }
-
-      // 最終更新から15分経過しているかチェック
       const lastUpdate = storeData.updatedAt.toMillis();
       const now = Date.now();
       const diff = now - lastUpdate;
-      
       setIsInactive(diff >= 15*60*1000);
     };
-
-    // 初回実行
     checkInactivity();
-
-    // 1分ごとに再チェックするタイマーを設定
     const intervalId = setInterval(checkInactivity, 60000);
-
-    // クリーンアップ関数
     return () => clearInterval(intervalId);
-  }, [storeData.isOpen, storeData.updatedAt]); // storeDataが更新されたらリセット
+  }, [storeData.isOpen, storeData.updatedAt]);
 
-  // ログアウト確認用ハンドラ
+  // メニュー外クリックで閉じる処理
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleLogout = () => {
     if (window.confirm("ログアウトしますか？")) {
       onLogout();
     }
   };
-
-  // 共通のボタン基本スタイル
-  const baseBtnClass = "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95";
 
   return (
     <header className="bg-white shadow px-4 py-3 flex justify-between items-center sticky top-0 z-40">
@@ -82,8 +82,6 @@ export default function Header({
               : "hover:opacity-90 border-transparent"}
             ${isInactive ? "animate-pulse" : ""} 
           `}
-          /* ↑ isInactiveがtrueの場合に animate-pulse (点滅) を適用 */
-          
           style={storeData.isOpen ? {
             backgroundColor: theme.headerBg,
             color: theme.headerText,
@@ -93,27 +91,49 @@ export default function Header({
         </button>
       </div>
 
-      {/* 右端: 設定 & ログアウト */}
-      <div className="w-1/3 flex justify-end items-center">
-        <div className="flex items-center gap-1">
-          {/* 設定ボタン */}
-          <button
-            onClick={onOpenSettings}
-            className={`${baseBtnClass} text-gray-400 hover:bg-gray-100 hover:text-gray-700 hover:scale-110 hover:rotate-90`}
-            title="設定"
-          >
-            <FontAwesomeIcon icon={faCog} size="lg" />
-          </button>
-          
-          {/* ログアウトボタン */}
-          <button
-            onClick={handleLogout}
-            className={`${baseBtnClass} text-gray-400 hover:bg-red-50 hover:text-red-500 hover:scale-110`}
-            title="ログアウト"
-          >
-            <FontAwesomeIcon icon={faRightFromBracket} size="lg" />
-          </button>
-        </div>
+      {/* 右端: ハンバーガーメニュー */}
+      <div className="w-1/3 flex justify-end relative" ref={menuRef}>
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+          aria-label="メニューを開く"
+        >
+          <FontAwesomeIcon icon={faBars} size="lg" className="text-gray-600" />
+        </button>
+
+        {/* ドロップダウンメニュー */}
+        {isMenuOpen && (
+          <div className="absolute top-12 right-0 w-56 bg-white rounded-lg shadow-xl py-2 z-50 border border-gray-100 animate-fade-in-down">
+            {/* 業務ログ出力 */}
+            <button 
+              onClick={() => { setIsMenuOpen(false); onOpenLogs(); }} 
+              className="w-full text-left px-4 py-3 hover:bg-gray-100 flex items-center gap-3 text-gray-700 transition-colors"
+            >
+              <div className="w-6 text-center"><FontAwesomeIcon icon={faFileCsv} className="text-gray-400" /></div>
+              <span>業務ログ出力</span>
+            </button>
+            
+            {/* 店舗設定 */}
+            <button 
+              onClick={() => { setIsMenuOpen(false); onOpenSettings(); }}
+              className="w-full text-left px-4 py-3 hover:bg-gray-100 flex items-center gap-3 text-gray-700 transition-colors"
+            >
+              <div className="w-6 text-center"><FontAwesomeIcon icon={faCog} className="text-gray-400" /></div>
+              <span>店舗設定</span>
+            </button>
+            
+            <div className="border-t border-gray-100 my-1"></div>
+            
+            {/* ログアウト */}
+            <button 
+              onClick={() => { setIsMenuOpen(false); handleLogout(); }}
+              className="w-full text-left px-4 py-3 hover:bg-red-50 flex items-center gap-3 text-red-600 transition-colors"
+            >
+              <div className="w-6 text-center"><FontAwesomeIcon icon={faRightFromBracket} /></div>
+              <span>ログアウト</span>
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
