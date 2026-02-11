@@ -9,6 +9,9 @@ import {
   COLOR_CONFIG
 } from "@/lib/constants";
 import { GraphSettings } from "@/types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
+
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -115,16 +118,21 @@ export default function SettingsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg animate-[fadeIn_0.2s_ease-out] max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg animate-[fadeIn_0.2s_ease-out] max-h-[90vh] flex flex-col overflow-hidden">
 
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 shrink-0 shadow-[0_0_6px_0_rgba(0,0,0,0.15)]">
-          <h3 className="text-xl font-bold text-gray-800">
-            店舗・表示設定
-          </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            ✕
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 shrink-0 bg-gray-50">
+          <div>
+            <h3 className="font-bold text-xl text-gray-800">店舗・表示設定</h3>
+            <p className="text-xs text-gray-500 mt-0.5">各種数値、閉店中の統計表示についてカスタマイズできます。</p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <FontAwesomeIcon icon={faTimes} />
           </button>
+
         </div>
         
         <div className="p-6 overflow-y-auto">
@@ -267,16 +275,16 @@ export default function SettingsModal({
         </div>
 
 
-        <div className="flex justify-end gap-3 p-6 border-t border-gray-200 shrink-0 shadow-[0_0_6px_0_rgba(0,0,0,0.15)]">
+        <div className="flex justify-end gap-3 p-6 border-t border-gray-200 shrink-0 bg-gray-50">
           <button 
             onClick={onClose} 
-            className="px-4 py-2 text-gray-600 border border-gray-300 bg-gray-50 font-bold hover:bg-gray-100 rounded-lg transition-colors text-sm"
+            className="px-4 py-2 text-gray-600 border border-gray-300 bg-white font-bold hover:bg-gray-100 rounded-lg transition-colors text-sm"
           >
             キャンセル
           </button>
           <button 
             onClick={handleSave} 
-            className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors text-sm shadow-md"
+            className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-800 transition-all text-sm shadow-md"
           >
             保存する
           </button>
