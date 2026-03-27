@@ -25,12 +25,15 @@ function AdminContent() {
   const { settings: graphSettings, saveSettings: saveGraphSettings } = useGraphSettings();
   const { storeData, loading: dataLoading, toggleOpen, updateCount, updateSettings } = usePharmacyStore(targetStoreId);
 
-  // 営業中は画面スリープを防止
-  useWakeLock(storeData?.isOpen || false);
-
-  // --- 2. Local State (モーダルの開閉管理) ---
+  // --- 2. Local State (モーダルの開閉管理とWakeLockの制御) ---
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLogsOpen, setIsLogsOpen] = useState(false);
+  
+  // 常時点灯（Wake Lock）の手動切り替え用ステート
+  const [isWakeLockEnabled, setIsWakeLockEnabled] = useState(false);
+  
+  // storeData?.isOpen ではなく、手動切り替えのステートを渡す
+  const { isLocked } = useWakeLock(isWakeLockEnabled);
 
   // --- 3. Event Handlers ---
   
@@ -128,6 +131,29 @@ function AdminContent() {
           />
         )}
       </main>
+
+      {/* 常時点灯（Wake Lock）切り替え用のフローティングボタン */}
+      <button
+        onClick={() => setIsWakeLockEnabled(!isWakeLockEnabled)}
+        className={`fixed bottom-6 right-6 p-4 rounded-full shadow-lg transition-all duration-300 opacity-40 hover:opacity-100 z-50 ${
+          isLocked 
+            ? "bg-blue-600 text-white shadow-blue-500/30" 
+            : "bg-gray-500 text-white"
+        }`}
+        title={isLocked ? "常時点灯を解除" : "画面を常時点灯にする"}
+      >
+        {isLocked ? (
+          /* ONのアイコン（太陽） */
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 21v-2.25m-6.364-.386 1.591-1.591M3 12h2.25m.386-6.364 1.591 1.591M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" />
+          </svg>
+        ) : (
+          /* OFFのアイコン（月） */
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+          </svg>
+        )}
+      </button>
 
       {/* 設定モーダル */}
       <SettingsModal 
