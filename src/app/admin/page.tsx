@@ -30,10 +30,7 @@ function AdminContent() {
   const [isLogsOpen, setIsLogsOpen] = useState(false);
   
   // 常時点灯（Wake Lock）の手動切り替え用ステート
-  const [isWakeLockEnabled, setIsWakeLockEnabled] = useState(false);
-  
-  // storeData?.isOpen ではなく、手動切り替えのステートを渡す
-  const { isLocked } = useWakeLock(isWakeLockEnabled);
+ const { isLocked, toggleLock } = useWakeLock();
 
   // --- 3. Event Handlers ---
   
@@ -134,7 +131,7 @@ function AdminContent() {
 
       {/* 常時点灯（Wake Lock）切り替え用のフローティングボタン */}
       <button
-        onClick={() => setIsWakeLockEnabled(!isWakeLockEnabled)}
+        onClick={toggleLock} /* ここを toggleLock に変更 */
         className={`fixed bottom-6 right-6 p-4 rounded-full shadow-lg transition-all duration-300 opacity-40 hover:opacity-100 z-50 ${
           isLocked 
             ? "bg-blue-600 text-white shadow-blue-500/30" 
